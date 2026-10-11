@@ -1,0 +1,8 @@
+{
+  "name": "Remix College Company",
+  "description": "The premier operating holding company consolidating collegiate digital sports, media rights, varsity leagues, and student-athlete NIL infrastructure.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

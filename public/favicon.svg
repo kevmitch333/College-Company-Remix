@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="6" fill="#090A0C"/>
+  <rect x="2" y="2" width="28" height="28" rx="4" fill="none" stroke="#C89B3C" stroke-width="1.5" stroke-opacity="0.8"/>
+  <path d="M16 6 L23 11 L23 19 L16 26 L9 19 L9 11 Z" fill="none" stroke="#C89B3C" stroke-width="1.2"/>
+  <text x="16" y="19" font-family="Cinzel, Georgia, serif" font-size="11" font-weight="900" fill="#E8C98B" text-anchor="middle" letter-spacing="0.5">CC</text>
+</svg>

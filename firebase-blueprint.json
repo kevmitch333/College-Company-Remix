@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Accredited institutional member profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "title": { "type": "string" },
+        "organization": { "type": "string" },
+        "affiliationType": { "type": "string" },
+        "bio": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "conference": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "displayName", "email"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Message between accredited institutional members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "channelId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderTitle": { "type": "string" },
+        "senderOrg": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["id", "channelId", "senderId", "content", "timestamp"]
+    },
+    "ComplianceInquiry": {
+      "title": "ComplianceInquiry",
+      "description": "Official institutional ruling or compliance variance request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "institution": { "type": "string" },
+        "submitterName": { "type": "string" },
+        "submitterTitle": { "type": "string" },
+        "submitterEmail": { "type": "string" },
+        "bylawCategory": { "type": "string" },
+        "subject": { "type": "string" },
+        "inquiryDetails": { "type": "string" },
+        "urgency": { "type": "string" },
+        "status": { "type": "string" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["id", "institution", "submitterEmail", "bylawCategory", "subject"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": "UserProfile",
+      "description": "Institutional member directory profiles"
+    },
+    "/channels/{channelId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Institutional messages within channels"
+    },
+    "/compliance_inquiries/{inquiryId}": {
+      "schema": "ComplianceInquiry",
+      "description": "Submitted regulatory questions and variance petitions from member athletic directors"
+    }
+  }
+}
