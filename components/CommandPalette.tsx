@@ -18,7 +18,8 @@ import {
   ExternalLink,
   BookOpen,
   Briefcase,
-  Users
+  Users,
+  Mail
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -339,6 +340,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         },
         badge: 'Publications',
         icon: <BookOpen size={16} className="text-[#38BDF8]" />
+      },
+      {
+        id: 'intel-newsletter',
+        title: 'Subscribe to Weekly Market Intelligence Briefing',
+        subtitle: 'Weekly institutional updates delivered Mondays at 7:00 AM EST to athletic directors & investors',
+        category: 'Intelligence',
+        action: () => {
+          onNavigate('editorial', 'newsletter');
+          onClose();
+        },
+        badge: 'Weekly Dispatch',
+        icon: <Mail size={16} className="text-[#C89B3C]" />
       }
     );
 

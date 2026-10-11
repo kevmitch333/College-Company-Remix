@@ -44,6 +44,7 @@ import {
 } from 'firebase/firestore';
 import { db, ensureAuthenticated } from '../src/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NewsletterSignup } from './NewsletterSignup';
 
 export type ArticleCategory = 
   | 'All Dispatches' 
@@ -638,6 +639,11 @@ Concluding thoughts for university partners, athletic directors, and accredited 
               })}
             </div>
 
+            {/* In-Article Newsletter Subscription Capture */}
+            <div className="pt-6">
+              <NewsletterSignup variant="card" />
+            </div>
+
             {/* Bottom Institutional Disclaimer & Back Button */}
             <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-xs font-mono text-neutral-500">
@@ -850,6 +856,11 @@ Concluding thoughts for university partners, athletic directors, and accredited 
               </div>
             </div>
           )}
+
+          {/* Catalog Newsletter Signup */}
+          <div className="pt-6">
+            <NewsletterSignup variant="card" />
+          </div>
 
         </div>
         )}

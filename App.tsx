@@ -39,7 +39,8 @@ import {
   Printer,
   Check,
   Zap,
-  Command
+  Command,
+  Mail
 } from 'lucide-react';
 import { ScrollReveal } from './components/ScrollReveal';
 import { AnimatedCounter } from './components/AnimatedCounter';
@@ -63,6 +64,7 @@ import { InstitutionalLegalModal, LegalModalType } from './components/Institutio
 import { HoldingEcosystemTopology } from './components/HoldingEcosystemTopology';
 import { StrategicCommercializationPlan } from './components/StrategicCommercializationPlan';
 import { CommandPalette } from './components/CommandPalette';
+import { NewsletterSignup } from './components/NewsletterSignup';
 import { downloadFinancialPDF, downloadFinancialCSV, calculateFinancialMetrics } from './src/utils/exportFinancialReport';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -747,7 +749,7 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial'>('overview');
   const [holdingsSubTab, setHoldingsSubTab] = useState<'directory' | 'map' | 'topology'>('directory');
   const [governanceSubTab, setGovernanceSubTab] = useState<'overview' | 'compliance-dashboard' | 'repository' | 'risks' | 'memo'>('overview');
-  const [intelligenceSubTab, setIntelligenceSubTab] = useState<'editorial' | 'market_wire'>('editorial');
+  const [intelligenceSubTab, setIntelligenceSubTab] = useState<'editorial' | 'market_wire' | 'newsletter'>('editorial');
   const [selectedAudience, setSelectedAudience] = useState<'all' | 'university' | 'brands' | 'investors' | 'athletes'>('all');
   const [selectedDivision, setSelectedDivision] = useState<string>('All');
   const [selectedCluster, setSelectedCluster] = useState<string>('All Clusters');
@@ -1204,6 +1206,17 @@ export const App: React.FC = () => {
                   <Radio size={12} className={intelligenceSubTab === 'market_wire' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
                   <span>Live Market Intelligence Wire</span>
                 </button>
+                <button
+                  onClick={() => setIntelligenceSubTab('newsletter')}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    intelligenceSubTab === 'newsletter'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Mail size={12} className={intelligenceSubTab === 'newsletter' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
+                  <span>Weekly Intelligence Briefing</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1384,6 +1397,12 @@ export const App: React.FC = () => {
                   className="block py-1 hover:text-[#C89B3C]"
                 >
                   ↳ Live Market Intelligence Wire
+                </button>
+                <button 
+                  onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('newsletter'); setIsMobileNavOpen(false); }}
+                  className="block py-1 hover:text-[#C89B3C]"
+                >
+                  ↳ Weekly Newsletter Dispatch
                 </button>
               </div>
             </div>
@@ -2286,6 +2305,9 @@ export const App: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Newsletter Subscription Card embedded directly in Homepage Intelligence Preview */}
+                <NewsletterSignup variant="card" className="mt-8" />
 
               </div>
             </section>
@@ -3410,7 +3432,9 @@ export const App: React.FC = () => {
                   <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white tracking-tight mt-1">
                     {intelligenceSubTab === 'editorial' 
                       ? 'Institutional Editorial & Thought Leadership' 
-                      : 'Live Grounded Market Intelligence Wire'}
+                      : intelligenceSubTab === 'market_wire'
+                      ? 'Live Grounded Market Intelligence Wire'
+                      : 'Weekly Institutional Market Intelligence Updates'}
                   </h1>
                 </div>
 
@@ -3441,14 +3465,37 @@ export const App: React.FC = () => {
                       GROUNDED
                     </span>
                   </button>
+
+                  <button
+                    onClick={() => setIntelligenceSubTab('newsletter')}
+                    className={`px-3.5 py-2 rounded-sm uppercase tracking-wider font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      intelligenceSubTab === 'newsletter'
+                        ? 'bg-[#C89B3C] text-[#090A0C] shadow-md'
+                        : 'bg-[#121622] hover:bg-[#1A2030] text-neutral-300 hover:text-white border border-white/5'
+                    }`}
+                  >
+                    <Mail size={13} />
+                    <span>Weekly Intelligence Briefing</span>
+                  </button>
                 </div>
               </div>
 
               {/* Sub-View Content */}
-              {intelligenceSubTab === 'editorial' ? (
-                <BlogEditorialSection />
+              {intelligenceSubTab === 'newsletter' ? (
+                <div className="space-y-6">
+                  <NewsletterSignup variant="card" />
+                </div>
               ) : (
-                <MarketIntelligenceFeed />
+                <div className="space-y-8">
+                  {/* Executive Newsletter Signup Form in Intelligence & News Section */}
+                  <NewsletterSignup variant="banner" />
+
+                  {intelligenceSubTab === 'editorial' ? (
+                    <BlogEditorialSection />
+                  ) : (
+                    <MarketIntelligenceFeed />
+                  )}
+                </div>
               )}
 
             </div>

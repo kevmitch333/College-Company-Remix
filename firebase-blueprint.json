@@ -55,6 +55,23 @@
         "submittedAt": { "type": "string" }
       },
       "required": ["id", "institution", "submitterEmail", "bylawCategory", "subject"]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Subscriber profile for weekly institutional market intelligence dispatches",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "institution": { "type": "string" },
+        "role": { "type": "string" },
+        "topics": { "type": "string" },
+        "frequency": { "type": "string" },
+        "status": { "type": "string" },
+        "subscribedAt": { "type": "string" }
+      },
+      "required": ["email", "subscribedAt"]
     }
   },
   "firestore": {
@@ -69,6 +86,10 @@
     "/compliance_inquiries/{inquiryId}": {
       "schema": "ComplianceInquiry",
       "description": "Submitted regulatory questions and variance petitions from member athletic directors"
+    },
+    "/newsletter_subscribers/{subscriberId}": {
+      "schema": "NewsletterSubscriber",
+      "description": "Subscribers receiving weekly collegiate market intelligence reports"
     }
   }
 }

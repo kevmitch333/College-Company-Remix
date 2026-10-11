@@ -21,6 +21,7 @@ import {
   Radio,
   X
 } from 'lucide-react';
+import { NewsletterSignup } from './NewsletterSignup';
 
 export interface GroundedNewsItem {
   id: string;
@@ -441,6 +442,11 @@ export const MarketIntelligenceFeed: React.FC<{
           </button>
         </div>
       )}
+
+      {/* Weekly Institutional Intelligence Dispatch Signup */}
+      <div className="py-2">
+        <NewsletterSignup variant="card" />
+      </div>
 
       {/* Grounding Provenance & Verification Metadata Tray */}
       <div className="pt-4 border-t border-white/[0.08] space-y-3">
