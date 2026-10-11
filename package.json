@@ -36,5 +36,9 @@
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  }
+  },
+    "overrides": {
+          "@grpc/grpc-js": "1.13.6",
+          "esbuild": "0.28.1"
+    }
 }
