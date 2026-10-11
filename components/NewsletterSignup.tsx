@@ -18,7 +18,9 @@ import {
   RefreshCw,
   Send,
   Download,
-  X
+  X,
+  Loader2,
+  Check
 } from 'lucide-react';
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { db, ensureAuthenticated } from '../src/firebase';
@@ -28,6 +30,91 @@ export interface NewsletterSignupProps {
   variant?: 'banner' | 'card' | 'embedded';
   defaultTopic?: string;
   onSubscribed?: (email: string) => void;
+}
+
+export interface EmailValidationResult {
+  isValid: boolean;
+  error?: string;
+}
+
+/**
+ * Validates email format with descriptive institutional feedback.
+ */
+export function validateEmailFormat(input: string): EmailValidationResult {
+  const trimmed = input.trim();
+  
+  if (!trimmed) {
+    return { 
+      isValid: false, 
+      error: 'Institutional email address is required to receive weekly market intelligence dispatches.' 
+    };
+  }
+
+  if (/\s/.test(trimmed)) {
+    return { 
+      isValid: false, 
+      error: 'Email address cannot contain spaces. Please check for accidental whitespace.' 
+    };
+  }
+
+  if (!trimmed.includes('@')) {
+    return { 
+      isValid: false, 
+      error: "Missing '@' symbol. Please enter a complete address (e.g., director@athletics.edu or partner@fund.com)." 
+    };
+  }
+
+  const parts = trimmed.split('@');
+  if (parts.length > 2) {
+    return { 
+      isValid: false, 
+      error: "Email contains multiple '@' symbols. Please enter a valid single institutional email address." 
+    };
+  }
+
+  const [localPart, domainPart] = parts;
+
+  if (!localPart || localPart.length === 0) {
+    return { 
+      isValid: false, 
+      error: "Missing recipient name before '@' (e.g., ad@university.edu)." 
+    };
+  }
+
+  if (!domainPart || domainPart.length === 0) {
+    return { 
+      isValid: false, 
+      error: "Missing domain name after '@' (e.g., university.edu or athletics.org)." 
+    };
+  }
+
+  if (!domainPart.includes('.')) {
+    return { 
+      isValid: false, 
+      error: "Domain is missing an extension. Please include a top-level domain like .edu, .com, or .org." 
+    };
+  }
+
+  const domainSubparts = domainPart.split('.');
+  const tld = domainSubparts[domainSubparts.length - 1];
+
+  if (!tld || tld.length < 2) {
+    return { 
+      isValid: false, 
+      error: "Invalid domain extension. Domain ending must be at least 2 letters (e.g., .edu, .com, .io)." 
+    };
+  }
+
+  // Comprehensive RFC 5322 email regex check
+  const standardEmailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  if (!standardEmailRegex.test(trimmed)) {
+    return { 
+      isValid: false, 
+      error: "Please enter a valid email format without illegal characters (e.g., director@athletics.edu)." 
+    };
+  }
+
+  return { isValid: true };
 }
 
 const TOPIC_OPTIONS = [
@@ -47,6 +134,9 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   onSubscribed
 }) => {
   const [email, setEmail] = useState('');
+  const [confirmedEmail, setConfirmedEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState('');
   const [fullName, setFullName] = useState('');
   const [institution, setInstitution] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>(['house-ncaa', 'nil-clearinghouse', 'fast-broadcast']);
@@ -65,7 +155,8 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed?.email) {
-          setEmail(parsed.email);
+          setConfirmedEmail(parsed.email);
+          setEmail('');
           if (parsed.fullName) setFullName(parsed.fullName);
           if (parsed.institution) setInstitution(parsed.institution);
           if (parsed.topics) setSelectedTopics(parsed.topics);
@@ -79,6 +170,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   }, []);
 
   const toggleTopic = (topicId: string) => {
+    if (isSubmitting) return;
     setSelectedTopics(prev => 
       prev.includes(topicId) 
         ? prev.filter(t => t !== topicId) 
@@ -87,6 +179,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   };
 
   const handleSelectAllTopics = () => {
+    if (isSubmitting) return;
     if (selectedTopics.length === TOPIC_OPTIONS.length) {
       setSelectedTopics(['house-ncaa']);
     } else {
@@ -94,17 +187,72 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
+  const handleEmailChange = (newVal: string) => {
+    setEmail(newVal);
+    // If an error is currently displayed, re-validate dynamically to dismiss as soon as valid
+    if (emailError) {
+      const result = validateEmailFormat(newVal);
+      if (result.isValid) {
+        setEmailError(null);
+        setErrorMessage(null);
+      }
+    }
+  };
 
-    const cleanEmail = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-      setErrorMessage('Please enter a valid institutional email address.');
+  const handleEmailBlur = () => {
+    if (email.trim().length > 0) {
+      const result = validateEmailFormat(email);
+      if (!result.isValid) {
+        setEmailError(result.error || null);
+      } else {
+        setEmailError(null);
+      }
+    }
+  };
+
+  const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
+    if (isSubmitting) return;
+
+    // Anti-bot check: If the hidden honeypot field is filled, silently discard write
+    if (honeypot.trim().length > 0) {
+      console.warn('Automated bot signup trapped via honeypot field.');
+      // Silently simulate success to prevent bots from retrying with different vectors
+      setIsSuccess(true);
+      setEmail('');
+      setHoneypot('');
       return;
     }
 
+    // Anti-bot heuristic: Reject HTML tag injections or link payloads in email field
+    if (/<[^>]*>|http:\/\/|https:\/\//i.test(email)) {
+      setEmailError('Invalid email format detected.');
+      return;
+    }
+
+    // Client-side format validation
+    const validation = validateEmailFormat(email);
+    if (!validation.isValid) {
+      const descriptiveMsg = validation.error || 'Please enter a valid institutional email address.';
+      setEmailError(descriptiveMsg);
+      setErrorMessage(descriptiveMsg);
+      // Focus the email input
+      const inputEl = document.getElementById('newsletter-email-input');
+      if (inputEl) inputEl.focus();
+      return;
+    }
+
+    setEmailError(null);
+    setErrorMessage(null);
+
+    const cleanEmail = email.trim().toLowerCase();
     setIsSubmitting(true);
 
     try {
@@ -133,6 +281,11 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
       // 2. Persist in local storage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(subscriptionPayload));
 
+      // 3. Clear email input and reset state automatically upon confirmation
+      setConfirmedEmail(cleanEmail);
+      setEmail('');
+      setEmailError(null);
+      setErrorMessage(null);
       setIsSuccess(true);
       if (onSubscribed) {
         onSubscribed(cleanEmail);
@@ -148,6 +301,10 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   const handleResetPreferences = () => {
     setIsSuccess(false);
     setAlreadySubscribed(false);
+    setEmail('');
+    setEmailError(null);
+    setErrorMessage(null);
+    setHoneypot('');
   };
 
   return (
@@ -207,7 +364,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                   </div>
                   <p className="text-xs text-neutral-300 leading-relaxed">
                     Weekly briefings are dispatched every Monday morning at <strong>07:00 EST</strong> to{' '}
-                    <span className="text-[#E8C98B] font-mono">{email}</span>.
+                    <span className="text-[#E8C98B] font-mono">{confirmedEmail || email}</span>.
                   </p>
                 </div>
               </div>
@@ -243,14 +400,41 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                   onClick={handleResetPreferences}
                   className="px-3.5 py-2 bg-transparent hover:bg-white/5 border border-white/10 text-neutral-400 hover:text-white rounded text-xs font-mono transition-colors cursor-pointer"
                 >
-                  Edit Topics / Change Email
+                  Subscribe Another Address / Edit Preferences
                 </button>
               </div>
             </div>
           ) : (
             /* SUBSCRIPTION FORM INPUTS */
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {errorMessage && (
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 relative">
+              {/* Anti-Bot Honeypot Field (Invisible to human users and screen readers) */}
+              <div 
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  left: '-9999px',
+                  top: '-9999px',
+                  opacity: 0,
+                  width: '1px',
+                  height: '1px',
+                  overflow: 'hidden',
+                  pointerEvents: 'none'
+                }}
+                tabIndex={-1}
+              >
+                <label htmlFor="newsletter-hp-protection">Do not fill this field</label>
+                <input
+                  type="text"
+                  id="newsletter-hp-protection"
+                  name="institution_verification_url"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
+              {errorMessage && !emailError && (
                 <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-lg text-xs text-red-300 font-mono flex items-center gap-2">
                   <AlertCircle size={15} className="shrink-0" />
                   <span>{errorMessage}</span>
@@ -258,36 +442,78 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
               )}
 
               {/* Primary Input Row */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                <div className="md:col-span-7 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
-                    <Mail size={16} />
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                <div className="md:col-span-7">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
+                      <Mail size={16} />
+                    </div>
+                    <input
+                      type="email"
+                      id="newsletter-email-input"
+                      name="email"
+                      required
+                      disabled={isSubmitting}
+                      value={email}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      onBlur={handleEmailBlur}
+                      onKeyDown={handleEmailKeyDown}
+                      aria-invalid={!!emailError}
+                      aria-describedby={emailError ? 'newsletter-email-error' : undefined}
+                      placeholder="Enter institutional or corporate email address..."
+                      className={`w-full pl-10 pr-10 py-3 bg-[#0A0D14] rounded-sm text-sm text-white placeholder-neutral-500 font-sans outline-none transition-all ${
+                        emailError
+                          ? 'border border-red-500/80 focus:border-red-400 focus:ring-1 focus:ring-red-400/50 bg-red-950/20'
+                          : email.trim().length > 5 && validateEmailFormat(email).isValid
+                          ? 'border border-[#68D391]/60 focus:border-[#68D391] focus:ring-1 focus:ring-[#68D391]/30'
+                          : 'border border-white/15 focus:border-[#C89B3C] focus:ring-1 focus:ring-[#C89B3C]'
+                      } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    />
+                    {/* Status icon inside input */}
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      {emailError ? (
+                        <AlertCircle size={15} className="text-red-400" />
+                      ) : email.trim().length > 5 && validateEmailFormat(email).isValid ? (
+                        <Check size={15} className="text-[#68D391]" />
+                      ) : null}
+                    </div>
                   </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter institutional or corporate email address..."
-                    className="w-full pl-10 pr-4 py-3 bg-[#0A0D14] border border-white/15 focus:border-[#C89B3C] focus:ring-1 focus:ring-[#C89B3C] rounded-sm text-sm text-white placeholder-neutral-500 font-sans outline-none transition-colors"
-                  />
+
+                  {/* Contextual & Descriptive Email Format Error Feedback */}
+                  {emailError && (
+                    <div 
+                      id="newsletter-email-error"
+                      className="mt-2 p-2.5 bg-red-950/40 border border-red-500/40 rounded-sm text-xs text-red-300 font-mono flex items-start gap-2 animate-in fade-in duration-200"
+                    >
+                      <AlertCircle size={14} className="shrink-0 text-red-400 mt-0.5" />
+                      <div className="leading-relaxed">
+                        <span className="font-semibold text-red-200 block sm:inline">Format Error: </span>
+                        <span>{emailError}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="md:col-span-5">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 px-5 bg-[#C89B3C] hover:bg-[#D4AF37] disabled:opacity-60 text-[#090A0C] font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                    aria-busy={isSubmitting}
+                    className={`w-full py-3 px-5 font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg flex items-center justify-center gap-2 select-none ${
+                      isSubmitting
+                        ? 'bg-[#A88230] text-[#090A0C]/90 cursor-not-allowed opacity-85'
+                        : 'bg-[#C89B3C] hover:bg-[#D4AF37] active:bg-[#B58A32] text-[#090A0C] cursor-pointer'
+                    }`}
                   >
                     {isSubmitting ? (
                       <>
-                        <RefreshCw size={14} className="animate-spin" />
-                        <span>Verifying & Registering...</span>
+                        <Loader2 size={15} className="animate-spin shrink-0 text-[#090A0C]" />
+                        <span className="font-mono">Processing Subscription...</span>
                       </>
                     ) : (
                       <>
                         <span>Subscribe to Market Wire</span>
-                        <ArrowRight size={14} />
+                        <ArrowRight size={14} className="shrink-0" />
                       </>
                     )}
                   </button>
@@ -329,10 +555,12 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                         </div>
                         <input
                           type="text"
+                          disabled={isSubmitting}
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
+                          onKeyDown={handleEmailKeyDown}
                           placeholder="e.g. Dr. Vance, Athletic Director"
-                          className="w-full pl-8 pr-3 py-2 bg-[#121620] border border-white/10 focus:border-[#C89B3C] rounded-sm text-xs text-white placeholder-neutral-600 outline-none"
+                          className="w-full pl-8 pr-3 py-2 bg-[#121620] border border-white/10 focus:border-[#C89B3C] disabled:opacity-60 disabled:cursor-not-allowed rounded-sm text-xs text-white placeholder-neutral-600 outline-none"
                         />
                       </div>
                     </div>
@@ -347,10 +575,12 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                         </div>
                         <input
                           type="text"
+                          disabled={isSubmitting}
                           value={institution}
                           onChange={(e) => setInstitution(e.target.value)}
+                          onKeyDown={handleEmailKeyDown}
                           placeholder="e.g. Big Ten Conference, PE Fund"
-                          className="w-full pl-8 pr-3 py-2 bg-[#121620] border border-white/10 focus:border-[#C89B3C] rounded-sm text-xs text-white placeholder-neutral-600 outline-none"
+                          className="w-full pl-8 pr-3 py-2 bg-[#121620] border border-white/10 focus:border-[#C89B3C] disabled:opacity-60 disabled:cursor-not-allowed rounded-sm text-xs text-white placeholder-neutral-600 outline-none"
                         />
                       </div>
                     </div>
