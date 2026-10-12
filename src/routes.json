@@ -1,0 +1,214 @@
+[
+  {
+    "path": "/",
+    "tab": "overview",
+    "title": "College Company | Collegiate Digital Sports, Media & NIL Holding Group",
+    "description": "The premier operating holding company consolidating collegiate digital sports, media rights, varsity leagues, and student-athlete NIL infrastructure.",
+    "h1": "Consolidating the Collegiate Digital Sports, Media Rights & NIL Economy",
+    "summary": "College Company operates as the central holding company acquiring, scaling, and institutionalizing category-defining media properties, competitive circuits, and student-athlete NIL infrastructure across 400+ North American universities. The portfolio includes 43 proprietary brands spanning collegiate digital sports, media rights, varsity leagues, and student-athlete NIL infrastructure.",
+    "indexable": true
+  },
+  {
+    "path": "/holdings",
+    "tab": "holdings",
+    "holdingsSubTab": "directory",
+    "title": "Holdings & Campuses | College Company",
+    "description": "Directory of College Company's 43 proprietary brands across collegiate digital sports, media rights, varsity leagues, and NIL infrastructure.",
+    "h1": "Holding Asset Directory",
+    "summary": "The College Company portfolio includes 43 proprietary brands spanning collegiate digital sports, media rights, varsity leagues, and student-athlete NIL infrastructure, organized into four divisions.",
+    "indexable": true
+  },
+  {
+    "path": "/holdings/map",
+    "tab": "holdings",
+    "holdingsSubTab": "map",
+    "title": "Campus Footprint & Conference Map | College Company",
+    "description": "National campus footprint and conference map for College Company's collegiate digital sports and NIL holdings.",
+    "h1": "National Campus Footprint & Conference Map",
+    "summary": "A national view of the campus and conference footprint for College Company's collegiate digital sports, media rights, and NIL holdings across North American universities.",
+    "indexable": true
+  },
+  {
+    "path": "/holdings/topology",
+    "tab": "holdings",
+    "holdingsSubTab": "topology",
+    "title": "Holding Ecosystem Topology | College Company",
+    "description": "How College Company's operating divisions and portfolio brands connect as one holding ecosystem.",
+    "h1": "Operating Holding Ecosystem Topology",
+    "summary": "A structural view of how College Company's operating divisions and portfolio brands connect within a single holding ecosystem.",
+    "indexable": true
+  },
+  {
+    "path": "/divisions/competitive-leagues",
+    "tab": "holdings",
+    "holdingsSubTab": "directory",
+    "division": "Competitive Leagues",
+    "title": "Competitive Leagues Division | College Company",
+    "description": "College Company's Competitive Leagues division: collegiate esports and digital competition circuits.",
+    "h1": "Competitive Leagues Division",
+    "summary": "The Competitive Leagues division holds College Company's collegiate esports and digital competition circuits, including sim racing and drone racing leagues.",
+    "indexable": true
+  },
+  {
+    "path": "/divisions/nil-creator-capital",
+    "tab": "holdings",
+    "holdingsSubTab": "directory",
+    "division": "NIL & Creator Capital",
+    "title": "NIL & Creator Capital Division | College Company",
+    "description": "College Company's NIL and Creator Capital division: student-athlete name, image and likeness infrastructure.",
+    "h1": "NIL & Creator Capital Division",
+    "summary": "The NIL & Creator Capital division holds College Company's student-athlete name, image and likeness infrastructure and creator economy assets.",
+    "indexable": true
+  },
+  {
+    "path": "/divisions/media-broadcast",
+    "tab": "holdings",
+    "holdingsSubTab": "directory",
+    "division": "Media & Broadcast",
+    "title": "Media & Broadcast Division | College Company",
+    "description": "College Company's Media & Broadcast division: collegiate media rights, broadcast and streaming networks.",
+    "h1": "Media & Broadcast Division",
+    "summary": "The Media & Broadcast division holds College Company's collegiate media rights, broadcast and streaming networks.",
+    "indexable": true
+  },
+  {
+    "path": "/divisions/campus-infrastructure",
+    "tab": "holdings",
+    "holdingsSubTab": "directory",
+    "division": "Campus Infrastructure",
+    "title": "Campus Infrastructure Division | College Company",
+    "description": "College Company's Campus Infrastructure division: campus facilities and health assets.",
+    "h1": "Campus Infrastructure Division",
+    "summary": "The Campus Infrastructure division holds College Company's campus facilities, infrastructure and health assets.",
+    "indexable": true
+  },
+  {
+    "path": "/strategy",
+    "tab": "strategy",
+    "title": "Strategic Plan | College Company",
+    "description": "College Company's strategic plan for consolidating collegiate digital sports, media and NIL infrastructure.",
+    "h1": "Strategic Plan",
+    "summary": "College Company's strategic plan describes how the holding company intends to consolidate collegiate digital sports, media rights and NIL infrastructure across North American universities.",
+    "indexable": true
+  },
+  {
+    "path": "/financials",
+    "tab": "financials",
+    "financialSubTab": "simulator",
+    "title": "Financial Model | College Company",
+    "description": "Interactive financial model for College Company's collegiate digital sports and NIL holding strategy.",
+    "h1": "Financial Model",
+    "summary": "An interactive financial model for College Company's collegiate digital sports, media rights and NIL holdings, with scenario inputs for campus count, NIL deal size and media rights tier.",
+    "indexable": true
+  },
+  {
+    "path": "/financials/nil-analytics",
+    "tab": "financials",
+    "financialSubTab": "nil_analytics",
+    "title": "NIL Analytics | College Company",
+    "description": "NIL analytics for College Company's collegiate digital sports and NIL holdings.",
+    "h1": "NIL Analytics",
+    "summary": "NIL analytics for College Company's collegiate digital sports and NIL holdings.",
+    "indexable": true
+  },
+  {
+    "path": "/financials/athlete-calculator",
+    "tab": "financials",
+    "financialSubTab": "athlete_calculator",
+    "title": "Athlete Earnings Calculator | College Company",
+    "description": "Athlete earnings calculator for College Company's NIL infrastructure.",
+    "h1": "Athlete Earnings Calculator",
+    "summary": "An earnings calculator for student-athletes using College Company's NIL infrastructure.",
+    "indexable": true
+  },
+  {
+    "path": "/governance",
+    "tab": "governance",
+    "governanceSubTab": "overview",
+    "title": "Governance & Legal | College Company",
+    "description": "Governance, advisory and athletic trust structure of College Company.",
+    "h1": "Governance, Advisory & Athletic Trust",
+    "summary": "Governance, advisory and athletic trust information for College Company, including compliance, risk and memorandum materials.",
+    "indexable": true
+  },
+  {
+    "path": "/governance/compliance-dashboard",
+    "tab": "governance",
+    "governanceSubTab": "compliance-dashboard",
+    "title": "Compliance Dashboard | College Company",
+    "description": "Compliance dashboard for College Company's athletic and NIL governance.",
+    "h1": "Compliance Dashboard",
+    "summary": "A compliance dashboard covering College Company's athletic and NIL governance.",
+    "indexable": true
+  },
+  {
+    "path": "/governance/repository",
+    "tab": "governance",
+    "governanceSubTab": "repository",
+    "title": "Compliance Repository | College Company",
+    "description": "Compliance repository for College Company's athletic and NIL governance materials.",
+    "h1": "Compliance Repository",
+    "summary": "The compliance repository holds College Company's athletic and NIL governance materials.",
+    "indexable": true
+  },
+  {
+    "path": "/governance/risks",
+    "tab": "governance",
+    "governanceSubTab": "risks",
+    "title": "Risk Register | College Company",
+    "description": "Risk register for College Company's collegiate digital sports and NIL holdings.",
+    "h1": "Risk Register",
+    "summary": "The risk register for College Company's collegiate digital sports and NIL holdings.",
+    "indexable": true
+  },
+  {
+    "path": "/governance/memo",
+    "tab": "governance",
+    "governanceSubTab": "memo",
+    "title": "Governance Memo | College Company",
+    "description": "Governance memorandum for College Company.",
+    "h1": "Governance Memorandum",
+    "summary": "The governance memorandum for College Company.",
+    "indexable": true
+  },
+  {
+    "path": "/intelligence",
+    "tab": "editorial",
+    "intelligenceSubTab": "editorial",
+    "title": "Intelligence & News | College Company",
+    "description": "Editorial dispatches on collegiate NIL, media rights and digital sports from College Company.",
+    "h1": "Intelligence & News",
+    "summary": "Editorial dispatches from College Company on collegiate NIL, media rights and digital sports.",
+    "indexable": true
+  },
+  {
+    "path": "/intelligence/market-wire",
+    "tab": "editorial",
+    "intelligenceSubTab": "market_wire",
+    "title": "Market Wire | College Company",
+    "description": "Market wire of collegiate NIL, media rights and digital sports news from College Company.",
+    "h1": "Market Wire",
+    "summary": "A market wire of collegiate NIL, media rights and digital sports news compiled by College Company.",
+    "indexable": true
+  },
+  {
+    "path": "/intelligence/newsletter",
+    "tab": "editorial",
+    "intelligenceSubTab": "newsletter",
+    "title": "Newsletter | College Company",
+    "description": "Subscribe to the College Company newsletter on collegiate NIL, media rights and digital sports.",
+    "h1": "Newsletter",
+    "summary": "Subscribe to the College Company newsletter on collegiate NIL, media rights and digital sports.",
+    "indexable": true
+  },
+  {
+    "path": "/investors/faq",
+    "tab": "overview",
+    "scrollTo": "investor-faq",
+    "title": "Investor Strategy FAQ | College Company",
+    "description": "Investor strategy questions and answers for College Company.",
+    "h1": "Investor Strategy FAQ",
+    "summary": "Investor strategy questions and answers for College Company. This page is not indexed by search engines.",
+    "indexable": false
+  }
+]

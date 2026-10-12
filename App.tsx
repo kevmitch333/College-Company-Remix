@@ -59,6 +59,7 @@ import { NilAnalyticsSubView } from './components/NilAnalyticsSubView';
 import { StudentAthleteNilCalculator } from './components/StudentAthleteNilCalculator';
 import { MarketIntelligenceFeed } from './components/MarketIntelligenceFeed';
 import { InvestorStrategyFaq } from './components/InvestorStrategyFaq';
+import { resolveRouteState, pathForState, findRoute, type RouteState } from './src/routes';
 import { BlogEditorialSection } from './components/BlogEditorialSection';
 import { InstitutionalLegalModal, LegalModalType } from './components/InstitutionalLegalModal';
 import { HoldingEcosystemTopology } from './components/HoldingEcosystemTopology';
@@ -744,14 +745,19 @@ const INSTITUTIONAL_DEFAULT_IMAGES: HeroImageConfig[] = [
   }
 ];
 
+// Initial view comes from the URL so that section links and crawled pages open the right section.
+const INITIAL_ROUTE: RouteState = typeof window !== 'undefined'
+  ? resolveRouteState(window.location.pathname)
+  : resolveRouteState('/');
+
 export const App: React.FC = () => {
   // Navigation & View States
-  const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial'>('overview');
-  const [holdingsSubTab, setHoldingsSubTab] = useState<'directory' | 'map' | 'topology'>('directory');
-  const [governanceSubTab, setGovernanceSubTab] = useState<'overview' | 'compliance-dashboard' | 'repository' | 'risks' | 'memo'>('overview');
-  const [intelligenceSubTab, setIntelligenceSubTab] = useState<'editorial' | 'market_wire' | 'newsletter'>('editorial');
+  const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial'>(INITIAL_ROUTE.tab);
+  const [holdingsSubTab, setHoldingsSubTab] = useState<'directory' | 'map' | 'topology'>(INITIAL_ROUTE.holdingsSubTab);
+  const [governanceSubTab, setGovernanceSubTab] = useState<'overview' | 'compliance-dashboard' | 'repository' | 'risks' | 'memo'>(INITIAL_ROUTE.governanceSubTab);
+  const [intelligenceSubTab, setIntelligenceSubTab] = useState<'editorial' | 'market_wire' | 'newsletter'>(INITIAL_ROUTE.intelligenceSubTab);
   const [selectedAudience, setSelectedAudience] = useState<'all' | 'university' | 'brands' | 'investors' | 'athletes'>('all');
-  const [selectedDivision, setSelectedDivision] = useState<string>('All');
+  const [selectedDivision, setSelectedDivision] = useState<string>(INITIAL_ROUTE.selectedDivision);
   const [selectedCluster, setSelectedCluster] = useState<string>('All Clusters');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'bento' | 'table'>('bento');
@@ -787,7 +793,7 @@ export const App: React.FC = () => {
   const [avgNilDeal, setAvgNilDeal] = useState<number>(3500);
   const [mediaRightsTier, setMediaRightsTier] = useState<number>(12000);
   const [growthScenario, setGrowthScenario] = useState<'Conservative' | 'Expected' | 'Aggressive'>('Expected');
-  const [financialSubTab, setFinancialSubTab] = useState<'simulator' | 'nil_analytics' | 'athlete_calculator'>('simulator');
+  const [financialSubTab, setFinancialSubTab] = useState<'simulator' | 'nil_analytics' | 'athlete_calculator'>(INITIAL_ROUTE.financialSubTab);
 
   // Media Carousel
   const [heroImages, setHeroImages] = useState<HeroImageConfig[]>(() => {
@@ -815,6 +821,54 @@ export const App: React.FC = () => {
     }, 6500);
     return () => clearInterval(interval);
   }, [heroImages.length]);
+
+  // URL sync: keep the address bar, document title and back/forward buttons in step with the visible section.
+  const currentRoutePath = pathForState({
+    tab: activeTab,
+    holdingsSubTab,
+    governanceSubTab,
+    intelligenceSubTab,
+    financialSubTab,
+    selectedDivision,
+  });
+
+  useEffect(() => {
+    // The investor FAQ shares the overview state, so keep its own address until the visitor navigates away.
+    const onInPageRoute = Boolean(findRoute(window.location.pathname)?.scrollTo);
+    const keepInPageRoute = onInPageRoute && currentRoutePath === '/';
+    if (window.location.pathname !== currentRoutePath && !keepInPageRoute) {
+      window.history.pushState(null, '', currentRoutePath);
+    }
+    const route = findRoute(currentRoutePath);
+    if (route) {
+      document.title = route.title;
+      document.querySelector('meta[name="description"]')?.setAttribute('content', route.description);
+    }
+  }, [currentRoutePath]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const next = resolveRouteState(window.location.pathname);
+      setActiveTab(next.tab);
+      setHoldingsSubTab(next.holdingsSubTab);
+      setGovernanceSubTab(next.governanceSubTab);
+      setIntelligenceSubTab(next.intelligenceSubTab);
+      setFinancialSubTab(next.financialSubTab);
+      setSelectedDivision(next.selectedDivision);
+      if (!next.scrollTo) window.scrollTo({ top: 0 });
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Deep links to an in-page section (for example /investors/faq) scroll to it once the page has rendered.
+  useEffect(() => {
+    if (!INITIAL_ROUTE.scrollTo) return;
+    const timer = window.setTimeout(() => {
+      document.getElementById(INITIAL_ROUTE.scrollTo as string)?.scrollIntoView({ block: 'start' });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Global ESC key listener to dismiss open modals smoothly
   useEffect(() => {
@@ -2315,7 +2369,7 @@ export const App: React.FC = () => {
             {/* ========================================================================= */}
             {/* 7. INVESTOR STRATEGY FAQ (Collegiate Digital Sports Holding Strategy) */}
             {/* ========================================================================= */}
-            <section className="py-20 md:py-24 border-b border-white/[0.08] bg-[#0C0E14]">
+            <section id="investor-faq" className="py-20 md:py-24 border-b border-white/[0.08] bg-[#0C0E14]">
               <div className="max-w-[1360px] mx-auto px-6">
                 <InvestorStrategyFaq 
                   onRequestMemorandum={() => setIsInvestorModalOpen(true)}

@@ -1,71 +1,21 @@
 # Hostinger Deployment Guide for College Company
 
-This guide explains how to deploy the College Company institutional platform to **Hostinger**.
+The site is deployed to Hostinger as a Node.js application from the GitHub repository. Hostinger pulls the `main` branch, runs `npm install` and `npm run build`, and starts the app with `server.js`.
 
-Two deployment packages have been generated for you:
+## How the app is served
 
-1. **`hostinger-deploy-public_html.zip`** (Recommended for Hostinger Web / Cloud / Shared Hosting)
-   - Contains the fully compiled, production-optimized web application (`index.html`, minified JavaScript/CSS assets, `.htaccess` SPA router rewrite rules, and static images).
-   - Ready for instant drag-and-drop into Hostinger's `public_html/`.
+`npm run build` compiles the React application into `dist/` using Vite. `server.js` is an Express 5 server that serves `dist/` as static files, exposes a `/health` endpoint for uptime checks, provides the `/api/market-intelligence` endpoint, and returns a real 404 page for unknown paths. `server.js` must stay free of top-level `await`, because Hostinger's loader uses `require()` and top-level `await` causes an `ERR_REQUIRE_ASYNC_MODULE` startup failure.
 
-2. **`hostinger-full-source.zip`** (For Hostinger VPS or Git / Node.js Deployment)
-   - Contains the entire clean source codebase, TypeScript components, Tailwind CSS styling, package configurations, server entry points (`server.ts`), and build scripts (excluding `node_modules`).
+## Environment variables
 
----
+Secrets such as `GEMINI_API_KEY` belong in the Hostinger Node.js environment variable settings, never in committed files or in client-side code. Changing these values requires a redeploy before they take effect.
 
-## Method 1: Instant Deployment to Hostinger Web / Cloud Hosting (hPanel File Manager)
+## Deploying a change
 
-### Step 1: Log in to Hostinger hPanel
-1. Navigate to your [Hostinger Control Panel](https://hpanel.hostinger.com).
-2. Go to **Websites** and click **Manage** next to your domain.
+Merge the change into `main` on GitHub. Hostinger rebuilds and restarts automatically. Confirm the result by checking `https://college.company/health` and loading the home page.
 
-### Step 2: Open File Manager
-1. In the sidebar or search bar, click **File Manager** (under Files).
-2. Choose **Access files of [your domain]**.
-3. Open the **`public_html`** directory.
+## Troubleshooting
 
-### Step 3: Upload and Extract
-1. Delete default placeholder files (e.g. `default.php`) in `public_html` if present.
-2. Click the **Upload** icon (top right) and select **`hostinger-deploy-public_html.zip`**.
-3. Right-click the uploaded `.zip` file and select **Extract**.
-4. Choose `.` (or current directory `public_html`) as the extract destination.
-5. Verify that `index.html`, `.htaccess`, and the `assets/` folder are located directly inside `public_html/`.
-6. (Optional) Delete the `.zip` file from the server to save space.
+If the site returns 503, open the Hostinger runtime logs for the deployment. A startup error usually names the file and line. If the build fails, check the build log for missing dependencies or TypeScript errors, and run `npm run build` locally to reproduce.
 
-### Step 4: Test Your Domain
-1. Visit your domain (e.g. `https://yourdomain.com`).
-2. Your College Company site will load instantly with full HTTPS, dark luxury styling, interactive D3.js NIL charts, and holding maps.
-
----
-
-## Method 2: Deployment on Hostinger VPS (Node.js / Express / PM2)
-
-If you have a Hostinger VPS (Ubuntu/Debian) and want to run the full-stack server (`server.ts`):
-
-1. Upload `hostinger-full-source.zip` to your VPS (e.g. `/var/www/college-company`).
-2. Unzip the files:
-   ```bash
-   unzip hostinger-full-source.zip
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Build the production assets:
-   ```bash
-   npm run build
-   ```
-5. Start with PM2 or systemd:
-   ```bash
-   pm2 start server.ts --name "college-company" --interpreter npx --interpreter-args "tsx"
-   pm2 save
-   pm2 startup
-   ```
-6. Configure Nginx reverse proxy to forward port 80/443 to `http://localhost:3000`.
-
----
-
-## Troubleshooting & Verification
-
-- **404 on Page Refresh**: The included `.htaccess` file inside `hostinger-deploy-public_html.zip` automatically instructs Hostinger's LiteSpeed/Apache web server to rewrite all routes to `index.html`. If you experience 404s, ensure hidden files (dotfiles like `.htaccess`) are visible in Hostinger File Manager.
-- **SSL Certificate**: Enable Hostinger's free Lifetime SSL certificate under **Security > SSL** in hPanel.
+Local development uses `npm install` followed by `npm run dev`. Production behavior can be reproduced with `npm run build` and then `npm start`.
