@@ -25,7 +25,6 @@ app.get('/health', (_req, res) => {
     port: PORT
   });
 });
-})();
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
@@ -194,7 +193,6 @@ Return 4-6 verified recent headlines with publication sources, URLs, and institu
     });
   }
 });
-})();
 
 (async () => {
 // Serve static assets from dist
