@@ -200,12 +200,30 @@ const distPath = path.resolve(__dirname, 'dist');
 const distIndex = path.resolve(distPath, 'index.html');
 const hasDist = fs.existsSync(distIndex);
 
+// The site is a single page with no URL routes, so any unmatched path is a real 404.
+// Static files (robots.txt, sitemap.xml, og-image.jpg) are served by express.static above.
+const NOT_FOUND_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex" />
+<title>Page not found | College Company</title>
+</head>
+<body style="font-family: system-ui, sans-serif; background:#090A0C; color:#F5F5F3; margin:0; padding:48px 16px; text-align:center;">
+<h1 style="font-size:28px; font-weight:600;">Page not found</h1>
+<p><a href="/" style="color:#C89B3C;">Return to College Company</a></p>
+</body>
+</html>`;
+
+function notFound(_req, res) {
+  res.status(404).type('html').send(NOT_FOUND_HTML);
+}
+
 if (process.env.NODE_ENV === 'production' || hasDist) {
   app.use(express.static(distPath));
   // Express 5 compatible catch-all (replaces invalid app.get('*'))
-  app.use((_req, res) => {
-    res.sendFile(distIndex);
-  });
+  app.use(notFound);
 } else {
   try {
     const { createServer } = await import('vite');
@@ -217,9 +235,7 @@ if (process.env.NODE_ENV === 'production' || hasDist) {
   } catch {
     if (hasDist) {
       app.use(express.static(distPath));
-      app.use((_req, res) => {
-        res.sendFile(distIndex);
-      });
+      app.use(notFound);
     }
   }
 }
