@@ -25,6 +25,7 @@ app.get('/health', (_req, res) => {
     port: PORT
   });
 });
+})();
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
@@ -193,7 +194,9 @@ Return 4-6 verified recent headlines with publication sources, URLs, and institu
     });
   }
 });
+})();
 
+(async () => {
 // Serve static assets from dist
 const distPath = path.resolve(__dirname, 'dist');
 const distIndex = path.resolve(distPath, 'index.html');
@@ -236,3 +239,4 @@ process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
   server.close(() => process.exit(0));
 });
+})();
