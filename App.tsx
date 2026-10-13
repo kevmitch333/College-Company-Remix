@@ -3637,16 +3637,6 @@ export const App: React.FC = () => {
                 Regulatory Disclosures
               </button>
 
-              <a
-                href="./downloads/hostinger-deploy-public_html.zip"
-                download="hostinger-deploy-public_html.zip"
-                className="hover:text-[#E8C98B] cursor-pointer text-xs text-[#C89B3C] flex items-center gap-1 transition-colors font-mono"
-                title="Download verified production bundle for Hostinger public_html"
-              >
-                <Download size={13} />
-                <span>Export for Hosting (.zip)</span>
-              </a>
-              
               {/* Discrete Admin Carousel Trigger */}
               <button
                 onClick={() => setIsAdminOpen(true)}
