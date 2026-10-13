@@ -200,7 +200,7 @@ const distPath = path.resolve(__dirname, 'dist');
 const distIndex = path.resolve(distPath, 'index.html');
 const hasDist = fs.existsSync(distIndex);
 
-// The site is a single page with no URL routes, so any unmatched path is a real 404.
+// Section URLs are prerendered at build time; any other unmatched path is a real 404.
 // Static files (robots.txt, sitemap.xml, og-image.jpg) are served by express.static above.
 const NOT_FOUND_HTML = `<!doctype html>
 <html lang="en">
@@ -220,9 +220,26 @@ function notFound(_req, res) {
   res.status(404).type('html').send(NOT_FOUND_HTML);
 }
 
+// Each section URL (for example /holdings or /divisions/media-broadcast) has a prerendered
+// dist/<route>/index.html written at build time. Serve that file for the URL without a trailing slash.
+// Any path without a prerendered file falls through to notFound.
+function servePrerendered(req, res, next) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  let requested;
+  try {
+    requested = decodeURIComponent(req.path).replace(/\/+$/, '');
+  } catch {
+    return next();
+  }
+  if (!requested) return next();
+  const candidate = path.resolve(distPath, '.' + requested, 'index.html');
+  if (!candidate.startsWith(distPath + path.sep) || !fs.existsSync(candidate)) return next();
+  res.sendFile(candidate);
+}
+
 if (process.env.NODE_ENV === 'production' || hasDist) {
+  app.use(servePrerendered);
   app.use(express.static(distPath));
-  // Express 5 compatible catch-all (replaces invalid app.get('*'))
   app.use(notFound);
 } else {
   try {
@@ -234,6 +251,7 @@ if (process.env.NODE_ENV === 'production' || hasDist) {
     app.use(vite.middlewares);
   } catch {
     if (hasDist) {
+      app.use(servePrerendered);
       app.use(express.static(distPath));
       app.use(notFound);
     }
