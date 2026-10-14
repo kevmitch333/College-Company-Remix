@@ -19,14 +19,18 @@ import {
   BookOpen,
   Briefcase,
   Users,
-  Mail
+  Mail,
+  BrainCircuit,
+  Cpu,
+  Tv,
+  TrendingUp
 } from 'lucide-react';
 
 export interface CommandItem {
   id: string;
   title: string;
   subtitle: string;
-  category: 'Holdings' | 'Financials' | 'Strategy' | 'Governance & Rules' | 'Intelligence' | 'Audience Pathways';
+  category: 'Holdings' | 'Financials' | 'Strategy' | 'Governance & Rules' | 'Intelligence' | 'Audience Pathways' | 'AI Orchestrator';
   action: () => void;
   badge?: string;
   icon: React.ReactNode;
@@ -37,8 +41,8 @@ interface CommandPaletteProps {
   onClose: () => void;
   portfolioData: any[];
   onSelectBrand: (brand: any) => void;
-  onNavigate: (tab: 'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial', subTab?: string) => void;
-  onOpenModal: (modal: 'prospectus' | 'memo' | 'nil_alerts' | 'network' | 'compliance') => void;
+  onNavigate: (tab: 'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator', subTab?: string) => void;
+  onOpenModal: (modal: 'prospectus' | 'memo' | 'nil_alerts' | 'network' | 'compliance' | 'orchestrator') => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -392,6 +396,79 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         },
         badge: 'Direct Action',
         icon: <Users size={16} className="text-[#68D391]" />
+      },
+      // 8. Conversational AI Orchestration & Autonomous Sub-Agents
+      {
+        id: 'ai-orchestrator',
+        title: 'Launch Autonomous AI Orchestration Mesh',
+        subtitle: 'Multi-agent supervisor console routing inquiries across 400+ universities with native reasoning',
+        category: 'AI Orchestrator',
+        action: () => {
+          onNavigate('orchestrator');
+          onClose();
+        },
+        badge: 'AI Core',
+        icon: <BrainCircuit size={16} className="text-[#C89B3C]" />
+      },
+      {
+        id: 'ai-blueprint',
+        title: 'AI Architecture & Deployment Blueprint (400 Campuses)',
+        subtitle: 'Technical specifications: Supervisor Ingress, Context Caching, Google Search Grounding & Tool Sandbox',
+        category: 'AI Orchestrator',
+        action: () => {
+          onNavigate('orchestrator', 'blueprint');
+          onClose();
+        },
+        badge: 'Architecture',
+        icon: <Layers size={16} className="text-[#38BDF8]" />
+      },
+      {
+        id: 'ai-nil-agent',
+        title: 'Dispatch Agent-NIL · Clearinghouse & Legal Compliance',
+        subtitle: 'Automated student contract audit, Title IX parity check & House v. NCAA $22M cap evaluation',
+        category: 'AI Orchestrator',
+        action: () => {
+          onNavigate('orchestrator', 'nil');
+          onClose();
+        },
+        badge: 'Sub-Agent',
+        icon: <Scale size={16} className="text-[#68D391]" />
+      },
+      {
+        id: 'ai-tournament-agent',
+        title: 'Dispatch Agent-Tournament · Circuit Operations',
+        subtitle: 'CDRL drone telemetry, CRL sim-racing ruleset, anti-cheat dispute arbitration & eligibility',
+        category: 'AI Orchestrator',
+        action: () => {
+          onNavigate('orchestrator', 'tournament');
+          onClose();
+        },
+        badge: 'Sub-Agent',
+        icon: <Cpu size={16} className="text-[#38BDF8]" />
+      },
+      {
+        id: 'ai-broadcast-agent',
+        title: 'Dispatch Agent-Broadcast · FAST Syndication & Connected TV',
+        subtitle: '24/7 linear EPG generation, $18–$24 CPM advertising packaging & viewer minute telemetry',
+        category: 'AI Orchestrator',
+        action: () => {
+          onNavigate('orchestrator', 'broadcast');
+          onClose();
+        },
+        badge: 'Sub-Agent',
+        icon: <Tv size={16} className="text-[#F6AD55]" />
+      },
+      {
+        id: 'ai-capital-agent',
+        title: 'Dispatch Agent-Capital · Fiduciary IR & DCF Simulator',
+        subtitle: 'Series A DCF scenario simulation, 43-brand consolidation economics & 84.6% margin modeling',
+        category: 'AI Orchestrator',
+        action: () => {
+          onNavigate('orchestrator', 'capital');
+          onClose();
+        },
+        badge: 'Sub-Agent',
+        icon: <TrendingUp size={16} className="text-[#E8C98B]" />
       }
     );
 
@@ -463,7 +540,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
-  const categories = ['All', 'Audience Pathways', 'Holdings', 'Financials', 'Strategy', 'Governance & Rules', 'Intelligence'];
+  const categories = ['All', 'AI Orchestrator', 'Audience Pathways', 'Holdings', 'Financials', 'Strategy', 'Governance & Rules', 'Intelligence'];
 
   return (
     <div 

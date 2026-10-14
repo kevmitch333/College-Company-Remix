@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Mail, 
   CheckCircle2, 
@@ -137,6 +137,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   const [confirmedEmail, setConfirmedEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState('');
+  const renderTimestamp = useRef<number>(Date.now());
   const [fullName, setFullName] = useState('');
   const [institution, setInstitution] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>(['house-ncaa', 'nil-clearinghouse', 'fast-broadcast']);
@@ -223,11 +224,20 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
 
     // Anti-bot check: If the hidden honeypot field is filled, silently discard write
     if (honeypot.trim().length > 0) {
-      console.warn('Automated bot signup trapped via honeypot field.');
+      console.warn('[Security] Automated bot signup trapped and filtered via honeypot field.');
       // Silently simulate success to prevent bots from retrying with different vectors
       setIsSuccess(true);
       setEmail('');
       setHoneypot('');
+      return;
+    }
+
+    // Time-based anti-bot check: Flag unnatural submission speed (<400ms from render)
+    const timeElapsed = Date.now() - renderTimestamp.current;
+    if (timeElapsed < 400) {
+      console.warn('[Security] Automated submission filtered out (unnatural velocity).');
+      setIsSuccess(true);
+      setEmail('');
       return;
     }
 
@@ -407,7 +417,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
           ) : (
             /* SUBSCRIPTION FORM INPUTS */
             <form onSubmit={handleSubmit} noValidate className="space-y-4 relative">
-              {/* Anti-Bot Honeypot Field (Invisible to human users and screen readers) */}
+              {/* Anti-Bot Honeypot Field (Invisible to human users & screen readers, traps automated web crawlers) */}
               <div 
                 aria-hidden="true"
                 style={{
@@ -418,19 +428,22 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                   width: '1px',
                   height: '1px',
                   overflow: 'hidden',
-                  pointerEvents: 'none'
+                  pointerEvents: 'none',
+                  clip: 'rect(0, 0, 0, 0)'
                 }}
                 tabIndex={-1}
               >
-                <label htmlFor="newsletter-hp-protection">Do not fill this field</label>
+                <label htmlFor="newsletter-hp-protection">Company Website</label>
                 <input
                   type="text"
                   id="newsletter-hp-protection"
-                  name="institution_verification_url"
+                  name="company_website_url"
                   value={honeypot}
                   onChange={(e) => setHoneypot(e.target.value)}
                   tabIndex={-1}
-                  autoComplete="off"
+                  autoComplete="new-password"
+                  data-lpignore="true"
+                  data-form-type="other"
                 />
               </div>
 

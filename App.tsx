@@ -40,7 +40,8 @@ import {
   Check,
   Zap,
   Command,
-  Mail
+  Mail,
+  BrainCircuit
 } from 'lucide-react';
 import { ScrollReveal } from './components/ScrollReveal';
 import { AnimatedCounter } from './components/AnimatedCounter';
@@ -59,13 +60,13 @@ import { NilAnalyticsSubView } from './components/NilAnalyticsSubView';
 import { StudentAthleteNilCalculator } from './components/StudentAthleteNilCalculator';
 import { MarketIntelligenceFeed } from './components/MarketIntelligenceFeed';
 import { InvestorStrategyFaq } from './components/InvestorStrategyFaq';
-import { resolveRouteState, pathForState, findRoute, type RouteState } from './src/routes';
 import { BlogEditorialSection } from './components/BlogEditorialSection';
 import { InstitutionalLegalModal, LegalModalType } from './components/InstitutionalLegalModal';
 import { HoldingEcosystemTopology } from './components/HoldingEcosystemTopology';
 import { StrategicCommercializationPlan } from './components/StrategicCommercializationPlan';
 import { CommandPalette } from './components/CommandPalette';
 import { NewsletterSignup } from './components/NewsletterSignup';
+import { InstitutionalAiOrchestrator, UserRole, SubAgentId } from './components/InstitutionalAiOrchestrator';
 import { downloadFinancialPDF, downloadFinancialCSV, calculateFinancialMetrics } from './src/utils/exportFinancialReport';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -745,23 +746,24 @@ const INSTITUTIONAL_DEFAULT_IMAGES: HeroImageConfig[] = [
   }
 ];
 
-// Initial view comes from the URL so that section links and crawled pages open the right section.
-const INITIAL_ROUTE: RouteState = typeof window !== 'undefined'
-  ? resolveRouteState(window.location.pathname)
-  : resolveRouteState('/');
-
 export const App: React.FC = () => {
   // Navigation & View States
-  const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial'>(INITIAL_ROUTE.tab);
-  const [holdingsSubTab, setHoldingsSubTab] = useState<'directory' | 'map' | 'topology'>(INITIAL_ROUTE.holdingsSubTab);
-  const [governanceSubTab, setGovernanceSubTab] = useState<'overview' | 'compliance-dashboard' | 'repository' | 'risks' | 'memo'>(INITIAL_ROUTE.governanceSubTab);
-  const [intelligenceSubTab, setIntelligenceSubTab] = useState<'editorial' | 'market_wire' | 'newsletter'>(INITIAL_ROUTE.intelligenceSubTab);
+  const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator'>('overview');
+  const [holdingsSubTab, setHoldingsSubTab] = useState<'directory' | 'map' | 'topology'>('directory');
+  const [governanceSubTab, setGovernanceSubTab] = useState<'overview' | 'compliance-dashboard' | 'repository' | 'risks' | 'memo'>('overview');
+  const [intelligenceSubTab, setIntelligenceSubTab] = useState<'editorial' | 'market_wire' | 'newsletter'>('editorial');
   const [selectedAudience, setSelectedAudience] = useState<'all' | 'university' | 'brands' | 'investors' | 'athletes'>('all');
-  const [selectedDivision, setSelectedDivision] = useState<string>(INITIAL_ROUTE.selectedDivision);
+  const [selectedDivision, setSelectedDivision] = useState<string>('All');
   const [selectedCluster, setSelectedCluster] = useState<string>('All Clusters');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'bento' | 'table'>('bento');
   const [selectedBrand, setSelectedBrand] = useState<PortfolioBrand | null>(null);
+
+  // Conversational AI Orchestrator State
+  const [isOrchestratorModalOpen, setIsOrchestratorModalOpen] = useState(false);
+  const [orchestratorRole, setOrchestratorRole] = useState<UserRole>('athletic_director');
+  const [orchestratorAgent, setOrchestratorAgent] = useState<SubAgentId>('auto');
+  const [orchestratorPrompt, setOrchestratorPrompt] = useState<string>('');
 
   // Modals
   const [isInvestorModalOpen, setIsInvestorModalOpen] = useState(false);
@@ -793,7 +795,7 @@ export const App: React.FC = () => {
   const [avgNilDeal, setAvgNilDeal] = useState<number>(3500);
   const [mediaRightsTier, setMediaRightsTier] = useState<number>(12000);
   const [growthScenario, setGrowthScenario] = useState<'Conservative' | 'Expected' | 'Aggressive'>('Expected');
-  const [financialSubTab, setFinancialSubTab] = useState<'simulator' | 'nil_analytics' | 'athlete_calculator'>(INITIAL_ROUTE.financialSubTab);
+  const [financialSubTab, setFinancialSubTab] = useState<'simulator' | 'nil_analytics' | 'athlete_calculator'>('simulator');
 
   // Media Carousel
   const [heroImages, setHeroImages] = useState<HeroImageConfig[]>(() => {
@@ -821,54 +823,6 @@ export const App: React.FC = () => {
     }, 6500);
     return () => clearInterval(interval);
   }, [heroImages.length]);
-
-  // URL sync: keep the address bar, document title and back/forward buttons in step with the visible section.
-  const currentRoutePath = pathForState({
-    tab: activeTab,
-    holdingsSubTab,
-    governanceSubTab,
-    intelligenceSubTab,
-    financialSubTab,
-    selectedDivision,
-  });
-
-  useEffect(() => {
-    // The investor FAQ shares the overview state, so keep its own address until the visitor navigates away.
-    const onInPageRoute = Boolean(findRoute(window.location.pathname)?.scrollTo);
-    const keepInPageRoute = onInPageRoute && currentRoutePath === '/';
-    if (window.location.pathname !== currentRoutePath && !keepInPageRoute) {
-      window.history.pushState(null, '', currentRoutePath);
-    }
-    const route = findRoute(currentRoutePath);
-    if (route) {
-      document.title = route.title;
-      document.querySelector('meta[name="description"]')?.setAttribute('content', route.description);
-    }
-  }, [currentRoutePath]);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      const next = resolveRouteState(window.location.pathname);
-      setActiveTab(next.tab);
-      setHoldingsSubTab(next.holdingsSubTab);
-      setGovernanceSubTab(next.governanceSubTab);
-      setIntelligenceSubTab(next.intelligenceSubTab);
-      setFinancialSubTab(next.financialSubTab);
-      setSelectedDivision(next.selectedDivision);
-      if (!next.scrollTo) window.scrollTo({ top: 0 });
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Deep links to an in-page section (for example /investors/faq) scroll to it once the page has rendered.
-  useEffect(() => {
-    if (!INITIAL_ROUTE.scrollTo) return;
-    const timer = window.setTimeout(() => {
-      document.getElementById(INITIAL_ROUTE.scrollTo as string)?.scrollIntoView({ block: 'start' });
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   // Global ESC key listener to dismiss open modals smoothly
   useEffect(() => {
@@ -1049,6 +1003,24 @@ export const App: React.FC = () => {
             >
               Intelligence & News
               {activeTab === 'editorial' && (
+                <motion.div
+                  layoutId="activeTabUnderline"
+                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                />
+              )}
+            </button>
+            <button
+              onClick={() => { setActiveTab('orchestrator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative flex items-center gap-1.5 cursor-pointer ${activeTab === 'orchestrator' ? 'text-[#C89B3C]' : ''}`}
+            >
+              <BrainCircuit size={13} className={activeTab === 'orchestrator' ? 'text-[#C89B3C]' : 'text-neutral-400'} />
+              <span>AI Orchestrator</span>
+              <span className="px-1.5 py-0.2 rounded bg-[#68D391]/15 border border-[#68D391]/30 text-[9px] font-mono text-[#68D391] flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-[#68D391] animate-pulse"></span>
+                400+
+              </span>
+              {activeTab === 'orchestrator' && (
                 <motion.div
                   layoutId="activeTabUnderline"
                   className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
@@ -1457,6 +1429,77 @@ export const App: React.FC = () => {
                   className="block py-1 hover:text-[#C89B3C]"
                 >
                   ↳ Weekly Newsletter Dispatch
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1 border-t border-white/5 pt-2">
+              <button 
+                onClick={() => { setActiveTab('orchestrator'); setIsMobileNavOpen(false); }}
+                className={`w-full text-left py-1.5 font-semibold text-sm flex items-center justify-between ${activeTab === 'orchestrator' ? 'text-[#C89B3C]' : 'text-white'}`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <BrainCircuit size={14} className="text-[#C89B3C]" />
+                  <span>7. AI Orchestration Mesh</span>
+                </span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#68D391]/20 text-[#68D391] border border-[#68D391]/30 font-mono">
+                  400+ Campuses
+                </span>
+              </button>
+              <div className="pl-4 space-y-1 text-neutral-400 font-mono text-[11px]">
+                <button 
+                  onClick={() => { 
+                    setActiveTab('orchestrator'); 
+                    setOrchestratorAgent('auto'); 
+                    setIsMobileNavOpen(false); 
+                  }}
+                  className="block py-1 hover:text-[#C89B3C]"
+                >
+                  ↳ Multi-Agent Supervisor Console
+                </button>
+                <button 
+                  onClick={() => { 
+                    setActiveTab('orchestrator'); 
+                    setOrchestratorAgent('nil_compliance'); 
+                    setOrchestratorRole('athletic_director');
+                    setIsMobileNavOpen(false); 
+                  }}
+                  className="block py-1 hover:text-[#C89B3C]"
+                >
+                  ↳ Agent-NIL · Legal Clearinghouse
+                </button>
+                <button 
+                  onClick={() => { 
+                    setActiveTab('orchestrator'); 
+                    setOrchestratorAgent('tournament_ops'); 
+                    setOrchestratorRole('athletic_director');
+                    setIsMobileNavOpen(false); 
+                  }}
+                  className="block py-1 hover:text-[#C89B3C]"
+                >
+                  ↳ Agent-Tournament · Circuit Ops
+                </button>
+                <button 
+                  onClick={() => { 
+                    setActiveTab('orchestrator'); 
+                    setOrchestratorAgent('media_fast'); 
+                    setOrchestratorRole('brand');
+                    setIsMobileNavOpen(false); 
+                  }}
+                  className="block py-1 hover:text-[#C89B3C]"
+                >
+                  ↳ Agent-Broadcast · FAST Connected TV
+                </button>
+                <button 
+                  onClick={() => { 
+                    setActiveTab('orchestrator'); 
+                    setOrchestratorAgent('fiduciary_ir'); 
+                    setOrchestratorRole('investor');
+                    setIsMobileNavOpen(false); 
+                  }}
+                  className="block py-1 hover:text-[#C89B3C]"
+                >
+                  ↳ Agent-Capital · Fiduciary IR & DCF
                 </button>
               </div>
             </div>
@@ -2360,6 +2403,99 @@ export const App: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Institutional AI Multi-Agent Mesh Spotlight Card */}
+                <div className="mt-8 p-6 sm:p-8 rounded-xl bg-gradient-to-r from-[#0C101A] via-[#101524] to-[#0E121E] border border-[#C89B3C]/30 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-[#C89B3C]/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-2 max-w-2xl">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1 rounded bg-[#C89B3C]/20 text-[#E8C98B] border border-[#C89B3C]/40">
+                          <BrainCircuit size={14} />
+                        </span>
+                        <span className="text-[11px] font-mono uppercase tracking-widest text-[#C89B3C] font-semibold">
+                          Autonomous AI Orchestration Mesh · 400+ Campuses
+                        </span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-white font-display">
+                        Multi-Agent Intelligence Core & Fiduciary AI Copilot
+                      </h3>
+                      <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-light">
+                        Deploy specialized sub-agents with native reasoning, live Google Search grounding, and cached university bylaws for instant NIL contract auditing, circuit dispute arbitration, FAST carriage CPMs, or Series A DCF simulations.
+                      </p>
+                      
+                      {/* Sub-Agent Quick Launch Badges */}
+                      <div className="pt-2 flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                        <button
+                          onClick={() => {
+                            setActiveTab('orchestrator');
+                            setOrchestratorAgent('nil_compliance');
+                            setOrchestratorRole('athletic_director');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-2.5 py-1 rounded bg-[#090D14] hover:bg-[#141A28] border border-[#68D391]/30 text-[#68D391] flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Scale size={11} /> Agent-NIL (Legal Audit)
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveTab('orchestrator');
+                            setOrchestratorAgent('tournament_ops');
+                            setOrchestratorRole('athletic_director');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-2.5 py-1 rounded bg-[#090D14] hover:bg-[#141A28] border border-[#38BDF8]/30 text-[#38BDF8] flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Cpu size={11} /> Agent-Tournament (Telemetry)
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveTab('orchestrator');
+                            setOrchestratorAgent('media_fast');
+                            setOrchestratorRole('brand');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-2.5 py-1 rounded bg-[#090D14] hover:bg-[#141A28] border border-[#F6AD55]/30 text-[#F6AD55] flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Tv size={11} /> Agent-Broadcast (FAST CPMs)
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveTab('orchestrator');
+                            setOrchestratorAgent('fiduciary_ir');
+                            setOrchestratorRole('investor');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-2.5 py-1 rounded bg-[#090D14] hover:bg-[#141A28] border border-[#C89B3C]/30 text-[#E8C98B] flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <TrendingUp size={11} /> Agent-Capital (DCF Model)
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          setActiveTab('orchestrator');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-5 py-3 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <BrainCircuit size={14} />
+                        <span>Open AI Orchestrator</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsOrchestratorModalOpen(true);
+                        }}
+                        className="px-4 py-2.5 bg-[#141824] hover:bg-[#1C2234] text-neutral-300 hover:text-white border border-white/10 font-mono text-xs rounded-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Launch Quick Copilot</span>
+                        <ArrowUpRight size={13} className="text-[#C89B3C]" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Newsletter Subscription Card embedded directly in Homepage Intelligence Preview */}
                 <NewsletterSignup variant="card" className="mt-8" />
 
@@ -2369,7 +2505,7 @@ export const App: React.FC = () => {
             {/* ========================================================================= */}
             {/* 7. INVESTOR STRATEGY FAQ (Collegiate Digital Sports Holding Strategy) */}
             {/* ========================================================================= */}
-            <section id="investor-faq" className="py-20 md:py-24 border-b border-white/[0.08] bg-[#0C0E14]">
+            <section className="py-20 md:py-24 border-b border-white/[0.08] bg-[#0C0E14]">
               <div className="max-w-[1360px] mx-auto px-6">
                 <InvestorStrategyFaq 
                   onRequestMemorandum={() => setIsInvestorModalOpen(true)}
@@ -3556,6 +3692,64 @@ export const App: React.FC = () => {
           </section>
         </motion.div>
       )}
+
+      {/* ========================================================================= */}
+      {/* VIEW 6: CONVERSATIONAL AI ORCHESTRATION MESH & MULTI-AGENT CORE */}
+      {/* ========================================================================= */}
+      {activeTab === 'orchestrator' && (
+        <motion.div
+          key="orchestrator"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <section className="py-10 md:py-14 bg-[#090A0C]">
+            <div className="max-w-[1360px] mx-auto px-6 space-y-6">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+                <div>
+                  <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-widest flex items-center gap-2">
+                    <BrainCircuit size={14} />
+                    <span>Autonomous Multi-Agent Orchestration Mesh</span>
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white tracking-tight mt-1">
+                    Institutional AI Orchestration Core
+                  </h1>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-xs text-neutral-400">
+                  <span className="w-2 h-2 rounded-full bg-[#68D391] animate-pulse" />
+                  <span>Serving 400+ Universities, Circuits & Broadcasts</span>
+                </div>
+              </div>
+
+              <InstitutionalAiOrchestrator 
+                isModal={false}
+                initialRole={orchestratorRole}
+                initialAgent={orchestratorAgent}
+                defaultPrompt={orchestratorPrompt}
+                onNavigateToTab={(tab, subTab) => {
+                  if (tab === 'governance') {
+                    setActiveTab('governance');
+                    if (subTab) setGovernanceSubTab(subTab as any);
+                  } else if (tab === 'financials') {
+                    setActiveTab('financials');
+                    if (subTab) setFinancialSubTab(subTab as any);
+                  } else if (tab === 'strategy') {
+                    setActiveTab('strategy');
+                  } else if (tab === 'holdings') {
+                    setActiveTab('holdings');
+                    if (subTab) setHoldingsSubTab(subTab as any);
+                  } else if (tab === 'editorial') {
+                    setActiveTab('editorial');
+                  }
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </div>
+          </section>
+        </motion.div>
+      )}
     </AnimatePresence>
   </main>
 
@@ -3601,6 +3795,7 @@ export const App: React.FC = () => {
                 <li><button onClick={() => { setActiveTab('editorial'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Editorial & Articles</button></li>
                 <li><button onClick={() => { setActiveTab('governance'); setGovernanceSubTab('compliance-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Compliance Dashboard</button></li>
                 <li><button onClick={() => setIsCompliancePortalOpen(true)} className="hover:text-white transition-colors">Rules & Compliance Repository</button></li>
+                <li><button onClick={() => { setActiveTab('orchestrator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[#C89B3C] hover:text-[#E8C98B] transition-colors flex items-center gap-1 font-mono text-[11px]"><BrainCircuit size={11} /> AI Orchestration Mesh</button></li>
               </ul>
             </div>
 
@@ -3637,6 +3832,16 @@ export const App: React.FC = () => {
                 Regulatory Disclosures
               </button>
 
+              <a
+                href="./downloads/hostinger-deploy-public_html.zip"
+                download="hostinger-deploy-public_html.zip"
+                className="hover:text-[#E8C98B] cursor-pointer text-xs text-[#C89B3C] flex items-center gap-1 transition-colors font-mono"
+                title="Download verified production bundle for Hostinger public_html"
+              >
+                <Download size={13} />
+                <span>Export for Hosting (.zip)</span>
+              </a>
+              
               {/* Discrete Admin Carousel Trigger */}
               <button
                 onClick={() => setIsAdminOpen(true)}
@@ -4122,7 +4327,7 @@ export const App: React.FC = () => {
           setSelectedBrand(brand);
         }}
         onNavigate={(tab, subTab) => {
-          setActiveTab(tab);
+          setActiveTab(tab as any);
           if (tab === 'holdings' && subTab) {
             setHoldingsSubTab(subTab as any);
           } else if (tab === 'financials' && subTab) {
@@ -4131,6 +4336,20 @@ export const App: React.FC = () => {
             setGovernanceSubTab(subTab as any);
           } else if (tab === 'editorial' && subTab) {
             setIntelligenceSubTab(subTab as any);
+          } else if (tab === 'orchestrator') {
+            if (subTab === 'nil') {
+              setOrchestratorAgent('nil_compliance');
+              setOrchestratorRole('athletic_director');
+            } else if (subTab === 'tournament') {
+              setOrchestratorAgent('tournament_ops');
+              setOrchestratorRole('athletic_director');
+            } else if (subTab === 'broadcast') {
+              setOrchestratorAgent('media_fast');
+              setOrchestratorRole('brand');
+            } else if (subTab === 'capital') {
+              setOrchestratorAgent('fiduciary_ir');
+              setOrchestratorRole('investor');
+            }
           }
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
@@ -4140,8 +4359,74 @@ export const App: React.FC = () => {
           else if (modal === 'nil_alerts') setIsNilAlertsOpen(true);
           else if (modal === 'network') setIsNetworkModalOpen(true);
           else if (modal === 'compliance') setIsCompliancePortalOpen(true);
+          else if (modal === 'orchestrator') setIsOrchestratorModalOpen(true);
         }}
       />
+
+      {/* ========================================================================= */}
+      {/* 16. PERSISTENT FLOATING QUICK COPILOT LAUNCHER BUTTON */}
+      {/* ========================================================================= */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => {
+            setOrchestratorPrompt('');
+            setIsOrchestratorModalOpen(true);
+          }}
+          className="group px-4 py-2.5 rounded-full bg-[#101420] hover:bg-[#161D30] border border-[#C89B3C]/50 hover:border-[#C89B3C] text-white shadow-[0_8px_30px_rgba(0,0,0,0.7)] flex items-center gap-2.5 transition-all hover:scale-105 cursor-pointer backdrop-blur-md"
+          title="Open Sovereign AI Orchestration Mesh & Specialized Sub-Agents"
+        >
+          <div className="relative">
+            <BrainCircuit size={18} className="text-[#C89B3C] group-hover:rotate-12 transition-transform" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#68D391] animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#68D391]" />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-bold font-mono tracking-tight text-white flex items-center gap-1.5">
+              <span>AI Orchestrator</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#C89B3C]/20 text-[#E8C98B] border border-[#C89B3C]/40 font-mono">
+                400+
+              </span>
+            </span>
+            <span className="text-[10px] text-neutral-400 font-mono hidden sm:inline">
+              Multi-Agent Mesh
+            </span>
+          </div>
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 17. FLOATING MODAL OVERLAY: INSTITUTIONAL AI ORCHESTRATOR */}
+      {/* ========================================================================= */}
+      {isOrchestratorModalOpen && (
+        <InstitutionalAiOrchestrator
+          isModal={true}
+          isOpen={isOrchestratorModalOpen}
+          onClose={() => setIsOrchestratorModalOpen(false)}
+          initialRole={orchestratorRole}
+          initialAgent={orchestratorAgent}
+          defaultPrompt={orchestratorPrompt}
+          onNavigateToTab={(tab, subTab) => {
+            setIsOrchestratorModalOpen(false);
+            if (tab === 'governance') {
+              setActiveTab('governance');
+              if (subTab) setGovernanceSubTab(subTab as any);
+            } else if (tab === 'financials') {
+              setActiveTab('financials');
+              if (subTab) setFinancialSubTab(subTab as any);
+            } else if (tab === 'strategy') {
+              setActiveTab('strategy');
+            } else if (tab === 'holdings') {
+              setActiveTab('holdings');
+              if (subTab) setHoldingsSubTab(subTab as any);
+            } else if (tab === 'editorial') {
+              setActiveTab('editorial');
+            } else if (tab === 'orchestrator') {
+              setActiveTab('orchestrator');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
 
     </div>
   );
