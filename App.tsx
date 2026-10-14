@@ -1248,6 +1248,119 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'financials' && (
+          <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
+            <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <div className="flex items-center gap-2 font-mono text-neutral-400">
+                <span className="text-[11px] uppercase tracking-wider text-[#C89B3C] font-semibold">Financial Sub-Pages:</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => setFinancialSubTab('simulator')}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    financialSubTab === 'simulator'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <SlidersHorizontal size={12} className={financialSubTab === 'simulator' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
+                  <span>TAM & Yield Simulator</span>
+                </button>
+                <button
+                  onClick={() => setFinancialSubTab('nil_analytics')}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    financialSubTab === 'nil_analytics'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <BarChart3 size={12} className={financialSubTab === 'nil_analytics' ? 'text-[#090A0C]' : 'text-[#68D391]'} />
+                  <span>NIL Analytics & Trends</span>
+                </button>
+                <button
+                  onClick={() => setFinancialSubTab('athlete_calculator')}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    financialSubTab === 'athlete_calculator'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <DollarSign size={12} className={financialSubTab === 'athlete_calculator' ? 'text-[#090A0C]' : 'text-[#38BDF8]'} />
+                  <span>Athlete NIL Calculator</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'orchestrator' && (
+          <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
+            <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <div className="flex items-center gap-2 font-mono text-neutral-400">
+                <span className="text-[11px] uppercase tracking-wider text-[#C89B3C] font-semibold">Specialized Sub-Agents:</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    setOrchestratorAgent('nil_compliance');
+                    setOrchestratorRole('athletic_director');
+                  }}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    orchestratorAgent === 'nil_compliance'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Scale size={12} className={orchestratorAgent === 'nil_compliance' ? 'text-[#090A0C]' : 'text-[#68D391]'} />
+                  <span>Agent-NIL Compliance</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setOrchestratorAgent('tournament_ops');
+                    setOrchestratorRole('athletic_director');
+                  }}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    orchestratorAgent === 'tournament_ops'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Cpu size={12} className={orchestratorAgent === 'tournament_ops' ? 'text-[#090A0C]' : 'text-[#38BDF8]'} />
+                  <span>Agent-Tournament Ops</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setOrchestratorAgent('media_fast');
+                    setOrchestratorRole('brand');
+                  }}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    orchestratorAgent === 'media_fast'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Tv size={12} className={orchestratorAgent === 'media_fast' ? 'text-[#090A0C]' : 'text-[#F6AD55]'} />
+                  <span>Agent-Broadcast FAST</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setOrchestratorAgent('fiduciary_ir');
+                    setOrchestratorRole('investor');
+                  }}
+                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                    orchestratorAgent === 'fiduciary_ir'
+                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <TrendingUp size={12} className={orchestratorAgent === 'fiduciary_ir' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
+                  <span>Agent-Capital IR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mobile Navigation Dropdown */}
         {isMobileNavOpen && (
           <div className="xl:hidden bg-[#0D1016] border-b border-white/10 px-6 py-5 flex flex-col gap-4 text-xs tracking-wider uppercase max-h-[85vh] overflow-y-auto">
@@ -3833,7 +3946,7 @@ export const App: React.FC = () => {
               </button>
 
               <a
-                href="./downloads/hostinger-deploy-public_html.zip"
+                href="/downloads/hostinger-deploy-public_html.zip"
                 download="hostinger-deploy-public_html.zip"
                 className="hover:text-[#E8C98B] cursor-pointer text-xs text-[#C89B3C] flex items-center gap-1 transition-colors font-mono"
                 title="Download verified production bundle for Hostinger public_html"

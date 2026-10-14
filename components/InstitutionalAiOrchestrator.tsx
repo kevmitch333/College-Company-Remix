@@ -257,6 +257,18 @@ Select your **Institutional Persona** or dispatch specialized sub-agents below t
     }
   }, [defaultPrompt]);
 
+  useEffect(() => {
+    if (initialRole) {
+      setSelectedRole(initialRole);
+    }
+  }, [initialRole]);
+
+  useEffect(() => {
+    if (initialAgent) {
+      setSelectedAgent(initialAgent);
+    }
+  }, [initialAgent]);
+
   const toggleReasoning = (msgId: string) => {
     setExpandedReasoningIds(prev => ({ ...prev, [msgId]: !prev[msgId] }));
   };

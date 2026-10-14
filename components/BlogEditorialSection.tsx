@@ -567,11 +567,15 @@ Concluding thoughts for university partners, athletic directors, and accredited 
             </div>
 
             {/* Cover Image */}
-            <div className="rounded-xl overflow-hidden border border-white/10 aspect-[16/9] max-h-[460px] relative shadow-2xl">
+            <div className="rounded-xl overflow-hidden border border-white/10 aspect-[16/9] max-h-[460px] relative shadow-2xl bg-[#0E121A]">
               <img 
                 src={selectedArticle.coverImage} 
                 alt={selectedArticle.title} 
                 className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80';
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#090A0C] via-transparent to-transparent opacity-60 pointer-events-none" />
             </div>
@@ -803,6 +807,10 @@ Concluding thoughts for university partners, athletic directors, and accredited 
                     src={article.coverImage} 
                     alt={article.title} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80';
+                    }}
                   />
                   <div className="absolute top-3 left-3">
                     <span className="px-2 py-0.5 rounded bg-[#090C12]/90 backdrop-blur-md text-[10px] font-mono text-[#E8C98B] border border-white/10 font-semibold">
