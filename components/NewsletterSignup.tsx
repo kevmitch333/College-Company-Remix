@@ -145,9 +145,20 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [alreadySubscribed, setAlreadySubscribed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showSampleModal, setShowSampleModal] = useState(false);
+
+  // Clean up toast timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Check if previously subscribed in local storage
   useEffect(() => {
@@ -297,6 +308,15 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
       setEmailError(null);
       setErrorMessage(null);
       setIsSuccess(true);
+      setShowToast(true);
+
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      toastTimeoutRef.current = setTimeout(() => {
+        setShowToast(false);
+      }, 5500);
+
       if (onSubscribed) {
         onSubscribed(cleanEmail);
       }
@@ -310,6 +330,10 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
 
   const handleResetPreferences = () => {
     setIsSuccess(false);
+    setShowToast(false);
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setAlreadySubscribed(false);
     setEmail('');
     setEmailError(null);
@@ -786,6 +810,49 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TOAST NOTIFICATION: Successfully subscribed! */}
+      {/* ========================================================================= */}
+      {showToast && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 max-w-md w-[calc(100vw-3rem)] p-4 rounded-xl bg-[#0F1420]/95 border border-[#68D391]/60 text-white shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300 ring-1 ring-[#68D391]/20"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-full bg-[#68D391]/20 text-[#68D391] shrink-0 mt-0.5">
+              <CheckCircle2 size={18} />
+            </div>
+            <div className="flex-1 min-w-0 pr-1">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-white font-sans tracking-tight">
+                  Successfully subscribed!
+                </h4>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#68D391]/20 text-[#68D391] font-semibold border border-[#68D391]/30">
+                  ACTIVE
+                </span>
+              </div>
+              <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                Your dispatch preferences have been registered. Weekly market intelligence briefings will be sent to{' '}
+                <span className="text-[#E8C98B] font-mono font-medium">{confirmedEmail || email}</span>.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowToast(false)}
+              className="text-neutral-400 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+              aria-label="Dismiss notification"
+            >
+              <X size={15} />
+            </button>
+          </div>
+          {/* Subtle countdown bar */}
+          <div className="mt-3 h-0.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-[#68D391] to-[#C89B3C] animate-[progress_5.5s_linear]" />
+          </div>
+        </aside>
       )}
     </>
   );
