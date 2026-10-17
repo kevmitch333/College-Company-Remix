@@ -1,7 +1,10 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, doc, getDocFromServer, setLogLevel } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
+
+// Silence internal Firestore transport warnings to prevent false error notifications
+setLogLevel('silent');
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -9,17 +12,25 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 // Initialize Auth
 export const auth = getAuth(app);
 
-// Initialize Firestore with configured databaseId
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+// Initialize Firestore with configured databaseId and forced long polling
+// to prevent stream buffering timeouts behind proxies and Cloud Run environments
+const dbId = firebaseConfig.firestoreDatabaseId || '(default)';
+let firestoreDb;
+try {
+  firestoreDb = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  }, dbId);
+} catch {
+  firestoreDb = getFirestore(app, dbId);
+}
+export const db = firestoreDb;
 
 // Validate Connection to Firestore on startup
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn("Firestore connection: client offline or syncing in background.");
-    }
+  } catch (error: any) {
+    console.warn("Firestore connection notice: operating with offline cache or background sync.", error?.message || error);
   }
 }
 testConnection();
