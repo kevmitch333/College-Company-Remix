@@ -256,9 +256,14 @@ export const InvestorStrategyFaq: React.FC<{
 
         {/* In-View Search Input */}
         <div className="relative">
+          <label htmlFor="faq-search-input" className="sr-only">
+            Search questions or keywords
+          </label>
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
           <input
             type="text"
+            id="faq-search-input"
+            aria-label="Search questions or keywords"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search questions or keywords..."

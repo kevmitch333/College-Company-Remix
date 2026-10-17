@@ -11,6 +11,25 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Security: Conceal technology stack
+app.disable('x-powered-by');
+
+// Hardened Security Headers Middleware
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://college.company https://*.run.app; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-ancestors 'self' https://*.google.com https://*.run.app; upgrade-insecure-requests;"
+  );
+  next();
+});
+
 app.use(cors());
 app.use(express.json());
 
@@ -21,6 +40,19 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     port
   });
+});
+
+// Syndicated RSS 2.0 Feed Endpoint for newsreaders & aggregators
+app.get(['/rss.xml', '/feed.xml', '/intelligence/rss.xml', '/api/rss'], (_req, res) => {
+  const rssDist = path.resolve(__dirname, 'dist', 'rss.xml');
+  const rssPublic = path.resolve(__dirname, 'public', 'rss.xml');
+  const filePath = fs.existsSync(rssDist) ? rssDist : rssPublic;
+  if (fs.existsSync(filePath)) {
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=1800, s-maxage=3600');
+    return res.sendFile(filePath);
+  }
+  res.status(404).type('text/plain').send('RSS feed not found');
 });
 
 const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';

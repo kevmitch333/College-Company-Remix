@@ -19,9 +19,11 @@ import {
   BookOpen,
   Newspaper,
   Radio,
-  X
+  X,
+  Rss
 } from 'lucide-react';
 import { NewsletterSignup } from './NewsletterSignup';
+import { RssSubscriptionModal } from './RssSubscriptionModal';
 
 export interface GroundedNewsItem {
   id: string;
@@ -125,6 +127,7 @@ export const MarketIntelligenceFeed: React.FC<{
   const [selectedCategory, setSelectedCategory] = useState<NewsCategoryFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRssModalOpen, setIsRssModalOpen] = useState(false);
   const [lastRefreshedTime, setLastRefreshedTime] = useState<string>('Just now');
   const [items, setItems] = useState<GroundedNewsItem[]>(GROUNDED_ARCHIVE_ITEMS);
   const [groundingSources, setGroundingSources] = useState<GroundingSource[]>([
@@ -265,6 +268,16 @@ export const MarketIntelligenceFeed: React.FC<{
           </div>
 
           <button
+            type="button"
+            onClick={() => setIsRssModalOpen(true)}
+            className="px-3.5 py-2 rounded bg-[#161B26] hover:bg-[#1E2536] border border-[#C89B3C]/40 hover:border-[#C89B3C] text-[#E8C98B] hover:text-white text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+            title="Subscribe to Live Market Wire via RSS"
+          >
+            <Rss size={13} className="text-[#C89B3C]" />
+            <span>RSS Feed</span>
+          </button>
+
+          <button
             onClick={() => fetchMarketIntelligence()}
             disabled={isRefreshing}
             className="px-3.5 py-2 rounded bg-[#161B26] hover:bg-[#1E2536] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-200 hover:text-white text-xs font-mono transition-all flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
@@ -307,6 +320,7 @@ export const MarketIntelligenceFeed: React.FC<{
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
           <input
             type="text"
+            aria-label="Filter headlines or sources"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter headlines or sources..."
@@ -332,6 +346,7 @@ export const MarketIntelligenceFeed: React.FC<{
         </div>
         <input
           type="text"
+          aria-label="Targeted real-time grounding query"
           value={customSearchPrompt}
           onChange={(e) => setCustomSearchPrompt(e.target.value)}
           placeholder="e.g. NCAA House settlement conference distributions 2026..."
@@ -488,6 +503,12 @@ export const MarketIntelligenceFeed: React.FC<{
           ))}
         </div>
       </div>
+
+      {/* RSS 2.0 Syndication Subscription Modal */}
+      <RssSubscriptionModal 
+        isOpen={isRssModalOpen} 
+        onClose={() => setIsRssModalOpen(false)} 
+      />
 
     </div>
   );

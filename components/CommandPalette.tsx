@@ -23,7 +23,8 @@ import {
   BrainCircuit,
   Cpu,
   Tv,
-  TrendingUp
+  TrendingUp,
+  Rss
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -42,7 +43,7 @@ interface CommandPaletteProps {
   portfolioData: any[];
   onSelectBrand: (brand: any) => void;
   onNavigate: (tab: 'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator', subTab?: string) => void;
-  onOpenModal: (modal: 'prospectus' | 'memo' | 'nil_alerts' | 'network' | 'compliance' | 'orchestrator') => void;
+  onOpenModal: (modal: 'prospectus' | 'memo' | 'nil_alerts' | 'network' | 'compliance' | 'orchestrator' | 'rss') => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -356,6 +357,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         },
         badge: 'Weekly Dispatch',
         icon: <Mail size={16} className="text-[#C89B3C]" />
+      },
+      {
+        id: 'intel-rss',
+        title: 'Subscribe to Intelligence & Market Updates via RSS Feed',
+        subtitle: 'Syndicated RSS 2.0 / Atom feed for news readers (Feedly, Inoreader, Apple News, NetNewsWire)',
+        category: 'Intelligence',
+        action: () => {
+          onNavigate('editorial', 'editorial');
+          onOpenModal('rss');
+          onClose();
+        },
+        badge: 'RSS 2.0 Feed',
+        icon: <Rss size={16} className="text-[#E8C98B]" />
       }
     );
 

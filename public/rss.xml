@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" 
+     xmlns:atom="http://www.w3.org/2005/Atom" 
+     xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>College Company · Intelligence &amp; Market Wire</title>
+    <link>https://college.company/intelligence</link>
+    <atom:link href="https://college.company/rss.xml" rel="self" type="application/rss+xml" />
+    <description>Executive research dispatches, regulatory antitrust rulings (House v. NCAA), collegiate media rights valuations, and NIL market updates across 400+ varsity athletic departments.</description>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 15 Oct 2026 16:15:00 GMT</lastBuildDate>
+    <pubDate>Thu, 15 Oct 2026 14:15:00 GMT</pubDate>
+    <copyright>Copyright 2026 College Company Holding Group Inc. All rights reserved.</copyright>
+    <managingEditor>kevin@collegeesportsx.com (Kevin Mitchell)</managingEditor>
+    <webMaster>kevin@collegeesportsx.com (Kevin Mitchell)</webMaster>
+    <docs>https://www.rssboard.org/rss-specification</docs>
+    <generator>College Company Fiduciary Intelligence Engine</generator>
+    <image>
+      <url>https://college.company/og-image.jpg</url>
+      <title>College Company · Intelligence &amp; Market Wire</title>
+      <link>https://college.company/intelligence</link>
+      <width>1200</width>
+      <height>630</height>
+    </image>
+    <item>
+      <title>House v. NCAA Settlement Clears Landmark $2.8B Revenue-Sharing Framework for Power-4 Athletics</title>
+      <link>https://college.company/intelligence/market-wire#news-01-house-settlement</link>
+      <guid isPermaLink="false">news-01-house-settlement</guid>
+      <pubDate>Thu, 15 Oct 2026 14:15:00 GMT</pubDate>
+      <category>House v. NCAA &amp; Revenue Share</category>
+      <author>Sports Business Journal via College Company Intelligence Wire</author>
+      <description><![CDATA[Federal court grants preliminary approval to landmark collegiate antitrust settlement, paving the way for universities to directly distribute up to $22.5M annually in commercial media and ticket revenue to student-athletes starting 2025-26. Fiduciary Impact: Accelerates bifurcation between high-budget athletic departments and mid-majors, elevating private holding company consolidation of auxiliary digital leagues.]]></description>
+      <content:encoded><![CDATA[Federal judge grants preliminary approval for the historic multi-billion dollar antitrust settlement. Universities are authorized to directly share up to $22M annually with rostered student-athletes. This expands funding moats for elite athletic departments while elevating the necessity for consolidated third-party commercial holding entities like College Company to manage auxiliary digital sports and brand licensing.]]></content:encoded>
+      <source url="https://www.sportsbusinessjournal.com">Sports Business Journal</source>
+    </item>
+    <item>
+      <title>The Great Collegiate Consolidation: Why Digital Sports Are Higher Education’s Next Linear Media Frontier</title>
+      <link>https://college.company/intelligence#art-01-collegiate-consolidation</link>
+      <guid isPermaLink="false">art-01-collegiate-consolidation</guid>
+      <pubDate>Wed, 14 Oct 2026 09:00:00 GMT</pubDate>
+      <category>Holding Strategy</category>
+      <author>Elena Rostova (Managing Director, Sovereign Capital &amp; Collegiate Media)</author>
+      <description><![CDATA[An executive analysis of shifting Gen-Z student demographics, campus athletic budgets, and how collegiate digital sports consolidation mirrors the 1984 CFA linear television revolution.]]></description>
+      <content:encoded><![CDATA[Over the past four decades, intercollegiate athletics was defined by the democratization and subsequent monetization of linear broadcast rights. Following the landmark 1984 Supreme Court ruling in NCAA v. Board of Regents, universities wrested control of television properties. In 2026, higher education stands at an identical inflection point across decentralized digital channels, varsity gaming circuits, and regional student streaming networks. Consolidated commercial leverage yields a 3.8x revenue premium compared to fragmented individual campus negotiations.]]></content:encoded>
+    </item>
+    <item>
+      <title>Collegiate Esports TV and Conference Digital Divisions Announce Multi-Year Linear FAST Carriage Expansion</title>
+      <link>https://college.company/intelligence/market-wire#news-02-fast-carriage-expansion</link>
+      <guid isPermaLink="false">news-02-fast-carriage-expansion</guid>
+      <pubDate>Thu, 15 Oct 2026 12:10:00 GMT</pubDate>
+      <category>Collegiate Esports &amp; Digital Leagues</category>
+      <author>Esports Insider &amp; Cablefax via College Company Intelligence Wire</author>
+      <description><![CDATA[Collegiate varsity esports broadcasts surpass 48 million aggregate connected-TV minutes across major FAST streaming channels, driven by collegiate sim racing (CRL) and tactical FPS regional conference rivalries.]]></description>
+      <content:encoded><![CDATA[Collegiate varsity esports broadcasts achieve significant connected-TV scale, logging over 48 million viewing minutes across FAST platforms. Validates College Company's thesis: digital collegiate athletics generates lucrative non-linear advertising inventory commanding blended $18.00–$24.00 CPMs without traditional stadium capital overhead.]]></content:encoded>
+      <source url="https://esportsinsider.com">Esports Insider &amp; Cablefax</source>
+    </item>
+    <item>
+      <title>SEC and Big Ten Joint Advisory Committee Proposes Unified NIL Roster Contract Standards</title>
+      <link>https://college.company/intelligence/market-wire#news-03-sec-bigten-nil-standards</link>
+      <guid isPermaLink="false">news-03-sec-bigten-nil-standards</guid>
+      <pubDate>Wed, 14 Oct 2026 18:45:00 GMT</pubDate>
+      <category>NIL &amp; Collectives</category>
+      <author>The Athletic &amp; ESPN via College Company Intelligence Wire</author>
+      <description><![CDATA[Top athletic directors draft standardized NIL agent accreditation guidelines, transparent smart-contract disclosure clauses, and student-athlete fiduciary financial literacy requirements.]]></description>
+      <content:encoded><![CDATA[Athletic directors from the nation's premier conferences propose unified commercial contract baselines, transparent smart-contract disclosure clauses, and mandatory fiduciary escrow verification, reinforcing audited clearinghouses.]]></content:encoded>
+      <source url="https://www.espn.com/college-sports">The Athletic &amp; ESPN</source>
+    </item>
+    <item>
+      <title>NIL Escrow Architecture: Algorithmic Compliance Under Evolving NCAA Bylaw 12 and Title IX</title>
+      <link>https://college.company/intelligence#art-02-nil-escrow-architecture</link>
+      <guid isPermaLink="false">art-02-nil-escrow-architecture</guid>
+      <pubDate>Fri, 02 Oct 2026 13:30:00 GMT</pubDate>
+      <category>Athletic Compliance</category>
+      <author>Sarah Jenkins, J.D. (Chief Regulatory Counsel, Collegiate Compliance Directorate)</author>
+      <description><![CDATA[How automated geofenced smart contracts protect student-athlete amateur status while providing athletic directors with 100% transparent audit trails across 32 differing state statutory mandates.]]></description>
+      <content:encoded><![CDATA[Since the inception of the Name, Image, and Likeness era, university compliance directors have faced an intricate compliance puzzle. With more than thirty distinct state statutes governing disclosure timelines and permitted commercial categories, manual review processes fail. College Company provides geofenced statutory validation, permanent category blacklisting, and direct athletic director API synchronization.]]></content:encoded>
+    </item>
+    <item>
+      <title>Automotive &amp; Aerospace Defense Giants Allocate Record $14M to Collegiate Sim Racing &amp; Drone Piloting Circuits</title>
+      <link>https://college.company/intelligence/market-wire#news-04-stem-sim-drone-surge</link>
+      <guid isPermaLink="false">news-04-stem-sim-drone-surge</guid>
+      <pubDate>Tue, 13 Oct 2026 11:30:00 GMT</pubDate>
+      <category>Collegiate Esports &amp; Digital Leagues</category>
+      <author>On3 NIL &amp; VentureBeat via College Company Intelligence Wire</author>
+      <description><![CDATA[Corporate STEM recruitment drives a 160% surge in collegiate sim racing and FPV drone racing tournament prize pools, targeting top aerospace and mechanical engineering student competitors.]]></description>
+      <content:encoded><![CDATA[Proves the capital premium commanded by technical digital sports (CRL &amp; CDRL) where corporate sponsors leverage commercial NIL as an executive talent acquisition funnel for engineering undergraduates.]]></content:encoded>
+      <source url="https://www.on3.com/nil">On3 NIL &amp; VentureBeat</source>
+    </item>
+    <item>
+      <title>From Dorm LANs to Varsity Arenas: Campus Infrastructure ROI for Division 1 Athletic Directorates</title>
+      <link>https://college.company/intelligence#art-03-campus-infrastructure-roi</link>
+      <guid isPermaLink="false">art-03-campus-infrastructure-roi</guid>
+      <pubDate>Sun, 20 Sep 2026 10:00:00 GMT</pubDate>
+      <category>Campus Infrastructure</category>
+      <author>Marcus Vance (Head of Campus Infrastructure &amp; Facility Design)</author>
+      <description><![CDATA[Evaluating the capital expenditure and multi-year yield of dedicated university esports arenas, broadcast labs, and high-performance STEM training hubs across 150+ university deployments.]]></description>
+      <content:encoded><![CDATA[A state-of-the-art 60-seat varsity digital sports arena requires roughly 15% of the capital expenditure demanded by a modest basketball training court, yet generates disproportionate admissions, corporate technology sponsorship, and student retention yield.]]></content:encoded>
+    </item>
+    <item>
+      <title>NCAA Division I Council Mandates Centralized Agent Registry &amp; Title IX Equal Opportunity Disclosure</title>
+      <link>https://college.company/intelligence/market-wire#news-05-ncaa-title9-registry</link>
+      <guid isPermaLink="false">news-05-ncaa-title9-registry</guid>
+      <pubDate>Mon, 12 Oct 2026 16:00:00 GMT</pubDate>
+      <category>Regulatory &amp; Title IX</category>
+      <author>Sportico via College Company Intelligence Wire</author>
+      <description><![CDATA[New NCAA regulatory provisions require all commercial athlete agreements exceeding $600 to be archived with institutional compliance desks, with algorithmic parity auditing for women’s athletic programs.]]></description>
+      <content:encoded><![CDATA[Institutional compliance barriers favor consolidated platforms equipped with automated Title IX compliance monitoring and digital document audit trails.]]></content:encoded>
+      <source url="https://www.sportico.com">Sportico</source>
+    </item>
+    <item>
+      <title>Private Equity Inflow into Collegiate Athletics Surpasses $1.2 Billion in Dedicated Special-Purpose Vehicles</title>
+      <link>https://college.company/intelligence/market-wire#news-06-private-equity-inflow</link>
+      <guid isPermaLink="false">news-06-private-equity-inflow</guid>
+      <pubDate>Sun, 11 Oct 2026 08:30:00 GMT</pubDate>
+      <category>NIL &amp; Collectives</category>
+      <author>Bloomberg &amp; Wall Street Journal via College Company Intelligence Wire</author>
+      <description><![CDATA[Institutional asset managers establish dedicated collegiate sports operating entities, targeting digital rights consolidation, facility naming, and turnkey commercial NIL infrastructure.]]></description>
+      <content:encoded><![CDATA[Positions College Company as an attractive sovereign operating partner with established proprietary intellectual property across 43 campus-facing digital sports, NIL clearinghouse, and infrastructure assets.]]></content:encoded>
+      <source url="https://www.bloomberg.com">Bloomberg &amp; Wall Street Journal</source>
+    </item>
+    <item>
+      <title>Valuing Conference Digital Broadcast Rights: Beyond the Traditional Linear Cable Bundle</title>
+      <link>https://college.company/intelligence#art-04-valuing-conference-broadcast-rights</link>
+      <guid isPermaLink="false">art-04-valuing-conference-broadcast-rights</guid>
+      <pubDate>Wed, 16 Sep 2026 15:20:00 GMT</pubDate>
+      <category>Media Rights</category>
+      <author>David Kim (VP of Media Syndication &amp; Rights Valuations)</author>
+      <description><![CDATA[A quantitative framework for valuing digital sports match streams, FAST distribution deals, and viewer engagement in the post-cord-cutting collegiate economy.]]></description>
+      <content:encoded><![CDATA[As traditional cable subscriptions decline, digital sports broadcasts attract the most coveted demographic in advertising: digital natives aged 18 to 34. Average viewing duration exceeds 48 minutes per session, surpassing traditional non-revenue linear sports.]]></content:encoded>
+    </item>
+  </channel>
+</rss>

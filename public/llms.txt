@@ -1,0 +1,36 @@
+# College Company
+
+> The premier operating holding company consolidating collegiate digital sports, media rights, varsity leagues, and student-athlete NIL infrastructure across 400+ North American universities.
+
+College Company operates as an integrated corporate holding entity acquiring, scaling, and institutionalizing category-defining intellectual properties across four core operating divisions:
+- Competitive Leagues & Global Events (CEX, CRL, CDRL, College Esports Champions)
+- NIL & Creator Capital (College Esports NIL, High School NIL, College NIL Hub)
+- Media, Broadcast & Publishing Networks (College Esports TV, College Esports Media, FAST linear network)
+- Campus AI & Tournament Infrastructure (AI Compliance Copilot, Title IX Parity Engine, Campus Facility Labs)
+
+## Key Facts & Moats
+- **Portfolio Scale**: 43 generic category-defining digital domains and intellectual properties.
+- **Campus Reach**: 400+ participating universities across Power-4 (SEC, Big Ten, ACC, Big 12) and mid-major conferences.
+- **Media Syndication**: Over 48 million aggregate connected-TV viewing minutes across linear FAST distribution channels commanding blended $18.00–$24.00 CPMs.
+- **Regulatory Moat**: Turnkey fiduciary clearinghouse automated for House v. NCAA $20M–$22.5M revenue sharing, Title IX equal opportunity auditing, and 50-state statutory compliance.
+
+## Core Holding Divisions
+- [Competitive Leagues](https://college.company/divisions/competitive-leagues): Collegiate sim racing (CRL), drone racing (CDRL), and varsity esports circuits (CEX).
+- [NIL & Creator Capital](https://college.company/divisions/nil-creator-capital): Standardized institutional clearinghouse, algorithmic escrow, and student-athlete monetization.
+- [Media & Broadcast](https://college.company/divisions/media-broadcast): 24/7 linear FAST streaming television network (College Esports TV).
+- [Campus Infrastructure](https://college.company/divisions/campus-infrastructure): AI compliance copilot, Title IX parity auditing, and high-performance varsity gaming facilities.
+
+## Institutional Intelligence & News
+- [Market Intelligence Wire](https://college.company/intelligence/market-wire): Verified real-world reporting and analysis on House v. NCAA antitrust settlement, Title IX directives, and conference media deals.
+- [Executive Thought Leadership](https://college.company/intelligence): Strategic essays on conference realignment, NIL clearinghouse architecture, and collegiate facility ROI.
+- [RSS Feed](https://college.company/rss.xml): Syndicated RSS 2.0 / Atom feed for news readers and enterprise intelligence aggregators.
+
+## Governance & Fiduciary
+- [Governance & Bylaws](https://college.company/governance): Codified rules repository, institutional risk matrix, and athletic director trust framework.
+- [Executive Memorandum](https://college.company/governance/memo): Confidential Series A institutional overview.
+- [Financial Model](https://college.company/financials): Interactive pro-forma TAM calculator and campus revenue simulator.
+
+## Contact & Inquiries
+- Managing Member: Kevin Mitchell (Cambridge, MA)
+- Institutional Inquiries: kevin@collegeesportsx.com
+- Main Site: https://college.company/

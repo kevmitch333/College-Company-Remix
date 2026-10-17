@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Mail, 
   CheckCircle2, 
@@ -482,6 +483,9 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                 <div className="md:col-span-7">
                   <div className="relative">
+                    <label htmlFor="newsletter-email-input" className="sr-only">
+                      Institutional or corporate email address
+                    </label>
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-500">
                       <Mail size={16} />
                     </div>
@@ -489,6 +493,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                       type="email"
                       id="newsletter-email-input"
                       name="email"
+                      aria-label="Institutional or corporate email address"
                       required
                       disabled={isSubmitting}
                       value={email}
@@ -532,14 +537,27 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                 </div>
 
                 <div className="md:col-span-5">
-                  <button
+                  <motion.button
                     type="submit"
                     disabled={isSubmitting}
                     aria-busy={isSubmitting}
-                    className={`w-full py-3 px-5 font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg flex items-center justify-center gap-2 select-none ${
+                    whileHover={
+                      !isSubmitting
+                        ? {
+                            scale: [1, 1.025, 1],
+                            transition: {
+                              duration: 1.1,
+                              repeat: Infinity,
+                              ease: 'easeInOut',
+                            },
+                          }
+                        : undefined
+                    }
+                    whileTap={!isSubmitting ? { scale: 0.96 } : undefined}
+                    className={`w-full py-3 px-5 font-bold text-xs uppercase tracking-wider rounded-sm shadow-lg flex items-center justify-center gap-2 select-none transition-colors ${
                       isSubmitting
                         ? 'bg-[#A88230] text-[#090A0C]/90 cursor-not-allowed opacity-85'
-                        : 'bg-[#C89B3C] hover:bg-[#D4AF37] active:bg-[#B58A32] text-[#090A0C] cursor-pointer'
+                        : 'bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] cursor-pointer'
                     }`}
                   >
                     {isSubmitting ? (
@@ -553,7 +571,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                         <ArrowRight size={14} className="shrink-0" />
                       </>
                     )}
-                  </button>
+                  </motion.button>
                 </div>
               </div>
 

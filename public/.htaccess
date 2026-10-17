@@ -8,11 +8,34 @@
   RewriteRule . /index.html [L]
 </IfModule>
 
-# Caching & Security Headers for Production Hosting
+# Caching & Hardened Security Headers for Production Hosting
 <IfModule mod_headers.c>
-  Header set X-Content-Type-Options "nosniff"
-  Header set X-Frame-Options "SAMEORIGIN"
-  Header set X-XSS-Protection "1; mode=block"
+  # 1. Technology stack concealment (Removes X-Powered-By: Express)
+  Header unset X-Powered-By
+
+  # 2. Prevent MIME type sniffing
+  Header always set X-Content-Type-Options "nosniff"
+
+  # 3. Clickjacking mitigation (Allow framing by same origin and preview environment)
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # 4. HTTP Strict Transport Security (HSTS) with subdomains and preload eligibility
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+  # 5. Referrer leakage prevention
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # 6. Sensitive browser hardware permissions lockdown
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+
+  # 7. Cross-Origin-Opener-Policy (COOP) allowing necessary OAuth/popup flows
+  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+
+  # 8. Cross-Origin-Resource-Policy (CORP) protecting internal assets
+  Header always set Cross-Origin-Resource-Policy "same-origin"
+
+  # 9. Hardened Content-Security-Policy (CSP) with base-uri, default-src, object-src 'none'
+  Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://college.company https://*.run.app; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-ancestors 'self' https://*.google.com https://*.run.app; upgrade-insecure-requests;"
 </IfModule>
 
 <IfModule mod_expires.c>

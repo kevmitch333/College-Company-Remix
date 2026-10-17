@@ -41,7 +41,8 @@ import {
   Zap,
   Command,
   Mail,
-  BrainCircuit
+  BrainCircuit,
+  Rss
 } from 'lucide-react';
 import { ScrollReveal } from './components/ScrollReveal';
 import { AnimatedCounter } from './components/AnimatedCounter';
@@ -67,6 +68,7 @@ import { StrategicCommercializationPlan } from './components/StrategicCommercial
 import { CommandPalette } from './components/CommandPalette';
 import { NewsletterSignup } from './components/NewsletterSignup';
 import { InstitutionalAiOrchestrator, UserRole, SubAgentId } from './components/InstitutionalAiOrchestrator';
+import { RssSubscriptionModal } from './components/RssSubscriptionModal';
 import { downloadFinancialPDF, downloadFinancialCSV, calculateFinancialMetrics } from './src/utils/exportFinancialReport';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -777,6 +779,7 @@ export const App: React.FC = () => {
   const [isNilAlertsOpen, setIsNilAlertsOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [legalModalType, setLegalModalType] = useState<LegalModalType>(null);
+  const [isRssModalOpen, setIsRssModalOpen] = useState(false);
 
   // Global Command Palette Shortcut (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -1242,6 +1245,14 @@ export const App: React.FC = () => {
                 >
                   <Mail size={12} className={intelligenceSubTab === 'newsletter' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
                   <span>Weekly Intelligence Briefing</span>
+                </button>
+                <button
+                  onClick={() => setIsRssModalOpen(true)}
+                  className="px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer text-[#E8C98B] hover:text-white hover:bg-white/5 border border-[#C89B3C]/30"
+                  title="Subscribe to market updates via RSS feed"
+                >
+                  <Rss size={12} className="text-[#C89B3C]" />
+                  <span>RSS Feed</span>
                 </button>
               </div>
             </div>
@@ -2069,32 +2080,32 @@ export const App: React.FC = () => {
                       <h3 className="text-xl font-semibold text-white font-display mb-3">
                         Consolidating 4,000+ Disconnected Campus Clubs
                       </h3>
-                      <p className="text-sm text-neutral-400 leading-relaxed">
+                      <p className="text-sm text-neutral-300 leading-relaxed">
                         Collegiate gaming currently mirrors 1960s collegiate football: massive grassroots student passion, 
                         unprecedented engagement, yet virtually zero institutional commercialization or unified governance. 
                         College Company supplies the operating holding architecture.
                       </p>
                     </div>
-                    <div className="pt-6 mt-6 border-t border-white/[0.06] text-xs font-mono text-neutral-500">
-                      Market Status: <span className="text-neutral-300">Early M&A Window</span>
+                    <div className="pt-6 mt-6 border-t border-white/[0.08] text-xs font-mono text-neutral-300">
+                      Market Status: <span className="text-[#E8C98B] font-semibold">Early M&amp;A Window</span>
                     </div>
                   </div>
 
                   {/* Pillar 02 */}
                   <div className="bg-[#11141A] p-7 rounded-lg border border-white/[0.07] flex flex-col justify-between hover:border-[#C89B3C]/30 transition-colors">
                     <div>
-                      <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-wider mb-3">02. NIL & Creator Capital</div>
+                      <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-wider mb-3">02. NIL &amp; Creator Capital</div>
                       <h3 className="text-xl font-semibold text-white font-display mb-3">
                         Institutional Student-Athlete Monetization
                       </h3>
-                      <p className="text-sm text-neutral-400 leading-relaxed">
+                      <p className="text-sm text-neutral-300 leading-relaxed">
                         NIL rights have created a multi-billion dollar direct-to-student liquidity channel. Through 
                         our College Esports NIL and Creator Academy divisions, we connect Fortune 500 sponsors 
                         directly to verified collegiate creators with enterprise compliance.
                       </p>
                     </div>
-                    <div className="pt-6 mt-6 border-t border-white/[0.06] text-xs font-mono text-neutral-500">
-                      Sector TAM: <span className="text-neutral-300">$230.4B Creator Economy</span>
+                    <div className="pt-6 mt-6 border-t border-white/[0.08] text-xs font-mono text-neutral-300">
+                      Sector TAM: <span className="text-[#68D391] font-semibold">$230.4B Creator Economy</span>
                     </div>
                   </div>
 
@@ -2103,16 +2114,16 @@ export const App: React.FC = () => {
                     <div>
                       <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-wider mb-3">03. Digital Real Estate Moat</div>
                       <h3 className="text-xl font-semibold text-white font-display mb-3">
-                        {PORTFOLIO_DATA.length} Category-Defining Domains & Trademarks
+                        {PORTFOLIO_DATA.length} Category-Defining Domains &amp; Trademarks
                       </h3>
-                      <p className="text-sm text-neutral-400 leading-relaxed">
+                      <p className="text-sm text-neutral-300 leading-relaxed">
                         Unlike fragmented tech point solutions, College Company owns the definitive category-defining 
                         generic properties (CEX, CDRL, College Esports TV, College NIL Hub, College Revenue Share). This eliminates customer 
                         acquisition overhead and anchors permanent organic authority.
                       </p>
                     </div>
-                    <div className="pt-6 mt-6 border-t border-white/[0.06] text-xs font-mono text-neutral-500">
-                      IP Defensibility: <span className="text-neutral-300">Unreplicable Asset Base</span>
+                    <div className="pt-6 mt-6 border-t border-white/[0.08] text-xs font-mono text-neutral-300">
+                      IP Defensibility: <span className="text-[#38BDF8] font-semibold">Unreplicable Asset Base</span>
                     </div>
                   </div>
 
@@ -3780,6 +3791,15 @@ export const App: React.FC = () => {
                     <Mail size={13} />
                     <span>Weekly Intelligence Briefing</span>
                   </button>
+
+                  <button
+                    onClick={() => setIsRssModalOpen(true)}
+                    className="px-3.5 py-2 rounded-sm uppercase tracking-wider font-semibold transition-all flex items-center gap-1.5 cursor-pointer bg-[#141824] hover:bg-[#1D2232] text-[#E8C98B] hover:text-white border border-[#C89B3C]/40 hover:border-[#C89B3C] shadow-sm"
+                    title="Subscribe via RSS (Feedly, Inoreader, Apple News, NetNewsWire)"
+                  >
+                    <Rss size={13} className="text-[#C89B3C]" />
+                    <span>RSS Feed</span>
+                  </button>
                 </div>
               </div>
 
@@ -4473,7 +4493,16 @@ export const App: React.FC = () => {
           else if (modal === 'network') setIsNetworkModalOpen(true);
           else if (modal === 'compliance') setIsCompliancePortalOpen(true);
           else if (modal === 'orchestrator') setIsOrchestratorModalOpen(true);
+          else if (modal === 'rss') setIsRssModalOpen(true);
         }}
+      />
+
+      {/* ========================================================================= */}
+      {/* 15b. SYNDICATED RSS 2.0 FEED SUBSCRIPTION MODAL */}
+      {/* ========================================================================= */}
+      <RssSubscriptionModal
+        isOpen={isRssModalOpen}
+        onClose={() => setIsRssModalOpen(false)}
       />
 
       {/* ========================================================================= */}

@@ -26,7 +26,8 @@ import {
   ChevronRight,
   TrendingUp,
   Tag,
-  AlertCircle
+  AlertCircle,
+  Rss
 } from 'lucide-react';
 import { 
   collection, 
@@ -45,6 +46,7 @@ import {
 import { db, ensureAuthenticated } from '../src/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NewsletterSignup } from './NewsletterSignup';
+import { RssSubscriptionModal } from './RssSubscriptionModal';
 
 export type ArticleCategory = 
   | 'All Dispatches' 
@@ -241,6 +243,7 @@ export const BlogEditorialSection: React.FC = () => {
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isRssModalOpen, setIsRssModalOpen] = useState(false);
 
   // Editor Form State
   const [formTitle, setFormTitle] = useState('');
@@ -505,6 +508,16 @@ Concluding thoughts for university partners, athletic directors, and accredited 
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
+                  onClick={() => setIsRssModalOpen(true)}
+                  className="px-3 py-1.5 bg-[#141822] hover:bg-[#1C2230] border border-[#C89B3C]/30 text-[#E8C98B] hover:text-white rounded text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Subscribe to updates via RSS feed"
+                >
+                  <Rss size={13} className="text-[#C89B3C]" />
+                  <span>RSS</span>
+                </button>
+
+                <button
                   onClick={handleCopyLink}
                   className="px-3 py-1.5 bg-[#141822] hover:bg-[#1C2230] border border-white/10 text-neutral-300 hover:text-white rounded text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
@@ -685,14 +698,26 @@ Concluding thoughts for university partners, athletic directors, and accredited 
               </p>
             </div>
 
-            {/* Create & Publish Button */}
-            <button
-              onClick={handleOpenCreateModal}
-              className="px-5 py-3 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg flex items-center gap-2 cursor-pointer shrink-0 self-start md:self-auto"
-            >
-              <PenTool size={15} />
-              <span>Draft & Publish Article</span>
-            </button>
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start md:self-auto">
+              <button
+                type="button"
+                onClick={() => setIsRssModalOpen(true)}
+                className="px-4 py-3 bg-[#131824] hover:bg-[#1A2234] border border-[#C89B3C]/40 hover:border-[#C89B3C] text-[#E8C98B] hover:text-white font-mono text-xs font-semibold rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                title="Subscribe to Intelligence & News via RSS"
+              >
+                <Rss size={14} className="text-[#C89B3C]" />
+                <span>RSS Feed</span>
+              </button>
+
+              <button
+                onClick={handleOpenCreateModal}
+                className="px-5 py-3 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-lg flex items-center gap-2 cursor-pointer"
+              >
+                <PenTool size={15} />
+                <span>Draft & Publish Article</span>
+              </button>
+            </div>
           </div>
 
           {/* Search Bar & Category Filter Pills */}
@@ -720,6 +745,7 @@ Concluding thoughts for university partners, athletic directors, and accredited 
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
               <input
                 type="text"
+                aria-label="Search articles, keywords, authors"
                 placeholder="Search articles, keywords, authors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1176,6 +1202,12 @@ Concluding thoughts for university partners, athletic directors, and accredited 
           </div>
         </div>
       )}
+
+      {/* RSS 2.0 Syndication Subscription Modal */}
+      <RssSubscriptionModal 
+        isOpen={isRssModalOpen} 
+        onClose={() => setIsRssModalOpen(false)} 
+      />
 
     </section>
   );
