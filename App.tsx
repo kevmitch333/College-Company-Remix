@@ -42,7 +42,10 @@ import {
   Command,
   Mail,
   BrainCircuit,
-  Rss
+  Rss,
+  ArrowRight,
+  Lock,
+  Clock
 } from 'lucide-react';
 import { ScrollReveal } from './components/ScrollReveal';
 import { AnimatedCounter } from './components/AnimatedCounter';
@@ -69,6 +72,24 @@ import { CommandPalette } from './components/CommandPalette';
 import { NewsletterSignup } from './components/NewsletterSignup';
 import { InstitutionalAiOrchestrator, UserRole, SubAgentId } from './components/InstitutionalAiOrchestrator';
 import { RssSubscriptionModal } from './components/RssSubscriptionModal';
+import { ConsumerPublicView } from './components/ConsumerPublicView';
+import { PrivateAccessGateModal } from './components/PrivateAccessGateModal';
+import { TierGateBanner } from './components/TierGateBanner';
+import { 
+  AccessTier, 
+  AccessProfile, 
+  getSavedTier, 
+  saveTier, 
+  getSavedProfile, 
+  saveProfile, 
+  getSavedMode, 
+  saveMode,
+  isTabPermitted,
+  getRequiredTierForTab,
+  TIER_DEFINITIONS,
+  DEMO_PRESET_PROFILES,
+  PENDING_DEMO_PROFILE
+} from './src/utils/accessTiers';
 import { downloadFinancialPDF, downloadFinancialCSV, calculateFinancialMetrics } from './src/utils/exportFinancialReport';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -749,6 +770,31 @@ const INSTITUTIONAL_DEFAULT_IMAGES: HeroImageConfig[] = [
 ];
 
 export const App: React.FC = () => {
+  // Navigation Mode: 'consumer' (simplified public digest) or 'portal' (institutional secured workspace)
+  const [navMode, setNavMode] = useState<'consumer' | 'portal'>(() => getSavedMode());
+  const [userProfile, setUserProfile] = useState<AccessProfile>(() => getSavedProfile());
+  const [isAccessGateModalOpen, setIsAccessGateModalOpen] = useState(false);
+  const [selectedToolForModal, setSelectedToolForModal] = useState<string | undefined>(undefined);
+
+  const handleSwitchMode = (newMode: 'consumer' | 'portal') => {
+    setNavMode(newMode);
+    saveMode(newMode);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectTier = (tier: AccessTier, customProfile?: Partial<AccessProfile>) => {
+    const base = DEMO_PRESET_PROFILES[tier] || DEMO_PRESET_PROFILES[0];
+    const defaultStatus = tier > 0 ? 'approved' : 'unregistered';
+    const updated: AccessProfile = {
+      ...base,
+      membershipStatus: defaultStatus,
+      ...(customProfile || {}),
+      tier
+    };
+    setUserProfile(updated);
+    saveProfile(updated);
+  };
+
   // Navigation & View States
   const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator'>('overview');
   const [holdingsSubTab, setHoldingsSubTab] = useState<'directory' | 'map' | 'topology'>('directory');
@@ -926,115 +972,236 @@ export const App: React.FC = () => {
           
           {/* Zone 1: Single text element wordmark / iconic lockup */}
           <div 
-            onClick={() => { setActiveTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            onClick={() => { 
+              if (navMode === 'consumer') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              } else {
+                setActiveTab('overview'); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+              }
+            }}
             className="flex items-center"
           >
             <SovereignLogo />
           </div>
 
-          {/* Zone 2: 6 clean, organized text navigation links with subtle underline/state */}
-          <nav className="hidden xl:flex items-center gap-7 text-xs uppercase tracking-[0.16em] font-medium text-neutral-400">
-            <button
-              onClick={() => { setActiveTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'overview' ? 'text-[#C89B3C]' : ''}`}
-            >
-              Thesis
-              {activeTab === 'overview' && (
-                <motion.div
-                  layoutId="activeTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('directory'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'holdings' ? 'text-[#C89B3C]' : ''}`}
-            >
-              Holdings & Campuses
-              {activeTab === 'holdings' && (
-                <motion.div
-                  layoutId="activeTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => { setActiveTab('strategy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative flex items-center gap-1.5 cursor-pointer ${activeTab === 'strategy' ? 'text-[#C89B3C]' : ''}`}
-            >
-              <span>Strategic Plan</span>
-              <span className="px-1.5 py-0.2 rounded bg-[#C89B3C]/15 border border-[#C89B3C]/30 text-[9px] font-mono text-[#E8C98B]">v1.0</span>
-              {activeTab === 'strategy' && (
-                <motion.div
-                  layoutId="activeTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => { setActiveTab('financials'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'financials' ? 'text-[#C89B3C]' : ''}`}
-            >
-              Financial Model & NIL
-              {activeTab === 'financials' && (
-                <motion.div
-                  layoutId="activeTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => { setActiveTab('governance'); setGovernanceSubTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'governance' ? 'text-[#C89B3C]' : ''}`}
-            >
-              Governance & Legal
-              {activeTab === 'governance' && (
-                <motion.div
-                  layoutId="activeTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => { setActiveTab('editorial'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'editorial' ? 'text-[#C89B3C]' : ''}`}
-            >
-              Intelligence & News
-              {activeTab === 'editorial' && (
-                <motion.div
-                  layoutId="activeTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-            <button
-              onClick={() => { setActiveTab('orchestrator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative flex items-center gap-1.5 cursor-pointer ${activeTab === 'orchestrator' ? 'text-[#C89B3C]' : ''}`}
-            >
-              <BrainCircuit size={13} className={activeTab === 'orchestrator' ? 'text-[#C89B3C]' : 'text-neutral-400'} />
-              <span>AI Orchestrator</span>
-              <span className="px-1.5 py-0.2 rounded bg-[#68D391]/15 border border-[#68D391]/30 text-[9px] font-mono text-[#68D391] flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-[#68D391] animate-pulse"></span>
-                400+
-              </span>
-              {activeTab === 'orchestrator' && (
-                <motion.div
-                  layoutId="activeTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-          </nav>
+          {/* Zone 2: Navigation Links depending on Mode */}
+          {navMode === 'consumer' ? (
+            <nav className="hidden xl:flex items-center gap-7 text-xs uppercase tracking-[0.16em] font-medium text-neutral-400">
+              <button
+                onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer text-[#C89B3C]"
+              >
+                Vision & Overview
+              </button>
+              <button
+                onClick={() => { 
+                  const el = document.getElementById('consumer-pillars');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer"
+              >
+                Four Pillars
+              </button>
+              <button
+                onClick={() => {
+                  handleSwitchMode('portal');
+                  setActiveTab('holdings');
+                }}
+                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer flex items-center gap-1.5"
+              >
+                <span>43 Holdings</span>
+                <span className="px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-[9px] font-mono text-neutral-300">Spotlight</span>
+              </button>
+              <button
+                onClick={() => setIsAccessGateModalOpen(true)}
+                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer flex items-center gap-1.5 text-neutral-300 hover:text-white"
+              >
+                <Lock size={12} className="text-[#C89B3C]" />
+                <span>Access Tiers</span>
+              </button>
+              <button
+                onClick={() => {
+                  handleSwitchMode('portal');
+                  setActiveTab('editorial');
+                }}
+                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer"
+              >
+                News & RSS
+              </button>
+              <button
+                onClick={() => handleSwitchMode('portal')}
+                className="hover:text-[#E8C98B] text-[#C89B3C] font-semibold transition-colors pb-1.5 cursor-pointer flex items-center gap-1"
+              >
+                <span>Enter Private Portal</span>
+                <ArrowRight size={12} />
+              </button>
+            </nav>
+          ) : (
+            <nav className="hidden xl:flex items-center gap-6 text-xs uppercase tracking-[0.15em] font-medium text-neutral-400">
+              <button
+                onClick={() => { setActiveTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'overview' ? 'text-[#C89B3C]' : ''}`}
+              >
+                Thesis
+                {activeTab === 'overview' && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('directory'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer flex items-center gap-1 ${activeTab === 'holdings' ? 'text-[#C89B3C]' : ''}`}
+              >
+                {userProfile.tier < 1 && <Lock size={11} className="text-neutral-500" />}
+                <span>Holdings</span>
+                {activeTab === 'holdings' && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => { setActiveTab('strategy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative flex items-center gap-1.5 cursor-pointer ${activeTab === 'strategy' ? 'text-[#C89B3C]' : ''}`}
+              >
+                {userProfile.tier < 1 && <Lock size={11} className="text-neutral-500" />}
+                <span>Strategy</span>
+                <span className="px-1.5 py-0.2 rounded bg-[#C89B3C]/15 border border-[#C89B3C]/30 text-[9px] font-mono text-[#E8C98B]">v1.0</span>
+                {activeTab === 'strategy' && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => { setActiveTab('financials'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer flex items-center gap-1 ${activeTab === 'financials' ? 'text-[#C89B3C]' : ''}`}
+              >
+                {userProfile.tier < 3 && <Lock size={11} className="text-neutral-500" />}
+                <span>Financials</span>
+                {activeTab === 'financials' && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => { setActiveTab('governance'); setGovernanceSubTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer flex items-center gap-1 ${activeTab === 'governance' ? 'text-[#C89B3C]' : ''}`}
+              >
+                {userProfile.tier < 2 && <Lock size={11} className="text-neutral-500" />}
+                <span>Governance</span>
+                {activeTab === 'governance' && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => { setActiveTab('editorial'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'editorial' ? 'text-[#C89B3C]' : ''}`}
+              >
+                Intelligence
+                {activeTab === 'editorial' && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+              <button
+                onClick={() => { setActiveTab('orchestrator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative flex items-center gap-1.5 cursor-pointer ${activeTab === 'orchestrator' ? 'text-[#C89B3C]' : ''}`}
+              >
+                <BrainCircuit size={13} className={activeTab === 'orchestrator' ? 'text-[#C89B3C]' : 'text-neutral-400'} />
+                <span>AI Orchestrator</span>
+                {userProfile.tier < 3 ? (
+                  <Lock size={10} className="text-neutral-500" />
+                ) : (
+                  <span className="px-1.5 py-0.2 rounded bg-[#68D391]/15 border border-[#68D391]/30 text-[9px] font-mono text-[#68D391] flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-[#68D391] animate-pulse"></span>
+                    400+
+                  </span>
+                )}
+                {activeTab === 'orchestrator' && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+            </nav>
+          )}
 
-          {/* Zone 3: 1-2 primary actions & quick find */}
+          {/* Zone 3: Mode Switcher, Clearance Badge & Primary Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* View Mode Switcher Pill */}
+            <div className="flex items-center p-0.5 rounded-sm bg-[#11151F] border border-white/10 text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => handleSwitchMode('consumer')}
+                className={`px-2.5 py-1 rounded-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                  navMode === 'consumer'
+                    ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-xs'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Simplified, digestible public overview"
+              >
+                <Globe size={11} />
+                <span>Public</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSwitchMode('portal')}
+                className={`px-2.5 py-1 rounded-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                  navMode === 'portal'
+                    ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-xs'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Institutional data rooms, holdings, and tools"
+              >
+                <ShieldCheck size={11} />
+                <span>Private Portal</span>
+              </button>
+            </div>
+
+            {/* Clearance & Access Tier Trigger */}
+            <button
+              onClick={() => setIsAccessGateModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono group shadow-sm cursor-pointer"
+              title="Manage Institutional Clearance & Access Tiers"
+            >
+              {userProfile.tier > 0 ? (
+                <>
+                  <ShieldCheck size={14} className="text-[#68D391]" />
+                  <span className="hidden xl:inline text-white font-medium truncate max-w-[100px]">{userProfile.displayName}</span>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#C89B3C] text-[#090A0C]">
+                    T{userProfile.tier}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Lock size={13} className="text-[#C89B3C]" />
+                  <span className="hidden sm:inline">Access</span>
+                  <span className="text-[10px] text-[#C89B3C] font-semibold">Tier 0</span>
+                </>
+              )}
+            </button>
+
             {/* Quick Find / Omni-Search Trigger (Cmd+K) */}
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
@@ -1094,8 +1261,8 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* CONTEXTUAL SUB-NAVIGATION BAR (For deep sections with sub-pages) */}
-        {activeTab === 'holdings' && (
+        {/* CONTEXTUAL SUB-NAVIGATION BAR (For deep sections with sub-pages, in portal mode) */}
+        {navMode === 'portal' && activeTab === 'holdings' && (
           <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
             <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2 font-mono text-neutral-400">
@@ -1139,7 +1306,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'governance' && (
+        {navMode === 'portal' && activeTab === 'governance' && (
           <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
             <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2 font-mono text-neutral-400">
@@ -1206,7 +1373,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'editorial' && (
+        {navMode === 'portal' && activeTab === 'editorial' && (
           <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
             <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2 font-mono text-neutral-400">
@@ -1259,7 +1426,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'financials' && (
+        {navMode === 'portal' && activeTab === 'financials' && (
           <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
             <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2 font-mono text-neutral-400">
@@ -1304,7 +1471,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'orchestrator' && (
+        {navMode === 'portal' && activeTab === 'orchestrator' && (
           <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
             <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2 font-mono text-neutral-400">
@@ -1640,13 +1807,146 @@ export const App: React.FC = () => {
         )}
       </header>
 
+      {/* Institutional Clearance & Evaluator Demo Strip */}
+      <div className="bg-[#0D1017] border-b border-white/[0.08] py-2 px-4 text-xs font-mono text-neutral-400 sticky top-[69px] z-30 backdrop-blur-md">
+        <div className="max-w-[1360px] mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[#C89B3C] font-semibold text-[11px] flex items-center gap-1.5">
+              <ShieldCheck size={14} />
+              <span>Membership:</span>
+            </span>
+            <span className="text-white font-medium">
+              {userProfile.membershipStatus === 'approved' ? (
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <span>Approved ({userProfile.displayName})</span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-bold">
+                    T{userProfile.tier}
+                  </span>
+                </span>
+              ) : userProfile.membershipStatus === 'pending' ? (
+                <span className="text-amber-400 flex items-center gap-1">
+                  <Clock size={12} className="animate-spin" />
+                  <span>Pending Directorate Review ({userProfile.displayName})</span>
+                </span>
+              ) : (
+                <span className="text-neutral-400">Public Guest (All Robust Tools Locked)</span>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-neutral-500 uppercase tracking-wider hidden md:inline">
+              Simulate Role:
+            </span>
+            <div className="inline-flex items-center bg-[#131722] rounded p-0.5 border border-white/10 text-[10px]">
+              <button
+                type="button"
+                onClick={() => handleSelectTier(0, { membershipStatus: 'unregistered', displayName: 'Public Guest', organization: 'Prospective Partner' })}
+                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                  userProfile.membershipStatus !== 'approved' && userProfile.membershipStatus !== 'pending'
+                    ? 'bg-white/15 text-white font-bold'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Public guest (Tools locked behind membership wall)"
+              >
+                Guest
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSelectTier(0, {
+                    ...PENDING_DEMO_PROFILE,
+                    membershipStatus: 'pending'
+                  });
+                }}
+                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                  userProfile.membershipStatus === 'pending'
+                    ? 'bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Application under review"
+              >
+                Pending
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectTier(1, { membershipStatus: 'approved' })}
+                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                  userProfile.membershipStatus === 'approved' && userProfile.tier === 1
+                    ? 'bg-[#38BDF8]/25 text-[#38BDF8] font-bold border border-[#38BDF8]/40'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Tier 1: Campus & Brand Partner"
+              >
+                Tier 1
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectTier(2, { membershipStatus: 'approved' })}
+                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                  userProfile.membershipStatus === 'approved' && userProfile.tier === 2
+                    ? 'bg-[#E8C98B]/25 text-[#E8C98B] font-bold border border-[#E8C98B]/40'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Tier 2: Athletic Director & Legal"
+              >
+                Tier 2
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectTier(3, { membershipStatus: 'approved' })}
+                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                  userProfile.membershipStatus === 'approved' && userProfile.tier === 3
+                    ? 'bg-[#68D391]/25 text-[#68D391] font-bold border border-[#68D391]/40'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Tier 3: Executive Board & Fiduciary"
+              >
+                Tier 3
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAccessGateModalOpen(true)}
+              className="text-[#C89B3C] hover:text-[#E8C98B] text-[11px] underline ml-2 cursor-pointer font-semibold"
+            >
+              {userProfile.membershipStatus === 'approved' ? 'Clearance Console' : 'Apply / Status'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ========================================================================= */}
       {/* MAIN CONTENT ROUTING */}
       {/* ========================================================================= */}
       <main className="flex-grow overflow-x-hidden">
-        <AnimatePresence mode="wait">
-          {/* VIEW 1: OVERVIEW / INVESTMENT THESIS */}
-          {activeTab === 'overview' && (
+        {navMode === 'consumer' ? (
+          <ConsumerPublicView 
+            onOpenAccessModal={(targetToolId) => {
+              setSelectedToolForModal(targetToolId);
+              setIsAccessGateModalOpen(true);
+            }}
+            onEnterPortal={(targetTab, actionModal) => {
+              if (targetTab) {
+                setActiveTab(targetTab as any);
+              }
+              if (actionModal) {
+                if (actionModal === 'orchestrator') setIsOrchestratorModalOpen(true);
+                else if (actionModal === 'nil-radar') setIsNilAlertsOpen(true);
+                else if (actionModal === 'compliance-portal') setIsCompliancePortalOpen(true);
+                else if (actionModal === 'financial-report') setIsFinancialReportModalOpen(true);
+                else if (actionModal === 'network') setIsNetworkModalOpen(true);
+              }
+              handleSwitchMode('portal');
+            }}
+            currentProfile={userProfile}
+            currentTier={userProfile.tier}
+          />
+        ) : (
+          <AnimatePresence mode="wait">
+            {/* VIEW 1: OVERVIEW / INVESTMENT THESIS */}
+            {activeTab === 'overview' && (
             <motion.div
               key="overview"
               initial={{ opacity: 0, y: 16 }}
@@ -2685,6 +2985,20 @@ export const App: React.FC = () => {
         {/* VIEW 2: HOLDINGS DIRECTORY ({PORTFOLIO_DATA.length} Strategic Entities) */}
         {/* ========================================================================= */}
         {activeTab === 'holdings' && (
+          (userProfile.membershipStatus !== 'approved' || userProfile.tier < 1) ? (
+            <TierGateBanner
+              requiredTier={1}
+              currentTier={userProfile.tier}
+              membershipStatus={userProfile.membershipStatus}
+              applicantName={userProfile.displayName}
+              sectionName="Proprietary Holdings Directory & 400+ Campus Impact Map"
+              onOpenAccessModal={() => {
+                setSelectedToolForModal('holding-directory-map');
+                setIsAccessGateModalOpen(true);
+              }}
+              onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+            />
+          ) : (
           <motion.div
             key="holdings"
             initial={{ opacity: 0, y: 16 }}
@@ -3039,12 +3353,27 @@ export const App: React.FC = () => {
             </div>
           </section>
         </motion.div>
+        )
       )}
 
       {/* ========================================================================= */}
       {/* VIEW: STRATEGIC PLAN & COMMERCIAL ENGINE (Strategy v1.0) */}
       {/* ========================================================================= */}
       {activeTab === 'strategy' && (
+        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 1) ? (
+          <TierGateBanner
+            requiredTier={1}
+            currentTier={userProfile.tier}
+            membershipStatus={userProfile.membershipStatus}
+            applicantName={userProfile.displayName}
+            sectionName="Strategic Commercialization Plan & NIL Calculator"
+            onOpenAccessModal={() => {
+              setSelectedToolForModal('student-nil-calc');
+              setIsAccessGateModalOpen(true);
+            }}
+            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+          />
+        ) : (
         <motion.div
           key="strategy"
           initial={{ opacity: 0, y: 16 }}
@@ -3058,12 +3387,27 @@ export const App: React.FC = () => {
             </div>
           </section>
         </motion.div>
+        )
       )}
 
       {/* ========================================================================= */}
       {/* VIEW 3: INTERACTIVE FINANCIAL MODEL & TAM SIMULATOR */}
       {/* ========================================================================= */}
       {activeTab === 'financials' && (
+        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 3) ? (
+          <TierGateBanner
+            requiredTier={3}
+            currentTier={userProfile.tier}
+            membershipStatus={userProfile.membershipStatus}
+            applicantName={userProfile.displayName}
+            sectionName="DCF Financial Modeling & Fiduciary Data Room"
+            onOpenAccessModal={() => {
+              setSelectedToolForModal('dcf-financial-modeler');
+              setIsAccessGateModalOpen(true);
+            }}
+            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+          />
+        ) : (
         <motion.div
           key="financials"
           initial={{ opacity: 0, y: 16 }}
@@ -3419,12 +3763,27 @@ export const App: React.FC = () => {
             </div>
           </section>
         </motion.div>
+        )
       )}
 
       {/* ========================================================================= */}
       {/* VIEW 4: INSTITUTIONAL GOVERNANCE & COMPLIANCE */}
       {/* ========================================================================= */}
       {activeTab === 'governance' && (
+        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 2) ? (
+          <TierGateBanner
+            requiredTier={2}
+            currentTier={userProfile.tier}
+            membershipStatus={userProfile.membershipStatus}
+            applicantName={userProfile.displayName}
+            sectionName="House v. NCAA Governance & Regulatory Repository"
+            onOpenAccessModal={() => {
+              setSelectedToolForModal('regulatory-audit-table');
+              setIsAccessGateModalOpen(true);
+            }}
+            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+          />
+        ) : (
         <motion.div
           key="governance"
           initial={{ opacity: 0, y: 16 }}
@@ -3721,6 +4080,7 @@ export const App: React.FC = () => {
             </div>
           </section>
         </motion.div>
+        )
       )}
 
       {/* ========================================================================= */}
@@ -3830,6 +4190,20 @@ export const App: React.FC = () => {
       {/* VIEW 6: CONVERSATIONAL AI ORCHESTRATION MESH & MULTI-AGENT CORE */}
       {/* ========================================================================= */}
       {activeTab === 'orchestrator' && (
+        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 3) ? (
+          <TierGateBanner
+            requiredTier={3}
+            currentTier={userProfile.tier}
+            membershipStatus={userProfile.membershipStatus}
+            applicantName={userProfile.displayName}
+            sectionName="Multi-Agent AI Fiduciary & Governance Orchestrator"
+            onOpenAccessModal={() => {
+              setSelectedToolForModal('ai-orchestrator');
+              setIsAccessGateModalOpen(true);
+            }}
+            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+          />
+        ) : (
         <motion.div
           key="orchestrator"
           initial={{ opacity: 0, y: 16 }}
@@ -3882,8 +4256,10 @@ export const App: React.FC = () => {
             </div>
           </section>
         </motion.div>
+        )
       )}
     </AnimatePresence>
+    )}
   </main>
 
       {/* ========================================================================= */}
@@ -4569,6 +4945,21 @@ export const App: React.FC = () => {
           }}
         />
       )}
+
+      {/* ========================================================================= */}
+      {/* 18. PRIVATE ACCESS GATE & TIER VERIFICATION MODAL */}
+      {/* ========================================================================= */}
+      <PrivateAccessGateModal
+        isOpen={isAccessGateModalOpen}
+        onClose={() => {
+          setIsAccessGateModalOpen(false);
+          setSelectedToolForModal(undefined);
+        }}
+        currentProfile={userProfile}
+        onSelectTier={handleSelectTier}
+        onSwitchMode={handleSwitchMode}
+        requestedToolId={selectedToolForModal}
+      />
 
     </div>
   );
