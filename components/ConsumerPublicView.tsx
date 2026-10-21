@@ -24,7 +24,8 @@ import {
   BrainCircuit,
   Scale,
   Search,
-  Bell
+  Bell,
+  Radio
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -925,97 +926,51 @@ export const ConsumerPublicView: React.FC<ConsumerPublicViewProps> = ({
       </section>
 
       {/* ========================================================================= */}
-      {/* 6. PUBLIC NEWS & INTELLIGENCE DIGEST (WITH RSS) */}
+      {/* 6. DEDICATED RESEARCH WIRE & INTELLIGENCE DISPATCHES (SEPARATE PAGE CALLOUT) */}
       {/* ========================================================================= */}
-      <section className="py-20 md:py-28 border-b border-white/[0.08] bg-[#0A0D13]">
+      <section className="py-16 md:py-20 border-b border-white/[0.08] bg-[#0A0D13]">
         <div className="max-w-[1240px] mx-auto px-6 text-left">
           
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-            <div>
-              <div className="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-[#C89B3C] uppercase mb-2">
-                <BookOpen size={13} />
-                <span>Market Updates & News</span>
+          <div className="rounded-xl p-8 md:p-10 bg-gradient-to-r from-[#10141F] via-[#141926] to-[#10141F] border border-white/10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden shadow-xl">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[#C89B3C]/5 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="space-y-3 max-w-2xl relative z-10">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-[#C89B3C]/10 border border-[#C89B3C]/30 text-xs font-mono text-[#E8C98B]">
+                <Radio size={13} className="text-[#C89B3C] animate-pulse" />
+                <span>Dedicated Research Wire & Market Intelligence</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
-                Latest Public Dispatches
-              </h2>
+
+              <h3 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+                Collegiate Antitrust, Media Rights & NIL Analysis
+              </h3>
+
+              <p className="text-sm text-neutral-300 font-light leading-relaxed">
+                All legal analysis, House v. NCAA settlement models, FAST media syndication dispatches, and the syndicated RSS wire have been moved onto their own dedicated research page to keep this homepage streamlined and focused.
+              </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsRssModalOpen(true)}
-                className="px-3.5 py-2 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white font-mono text-xs flex items-center gap-2 transition-all cursor-pointer"
-              >
-                <Rss size={13} className="text-[#C89B3C]" />
-                <span>RSS Feed</span>
-              </button>
-
+            <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
               <button
                 type="button"
                 onClick={() => onEnterPortal('editorial')}
-                className="px-3.5 py-2 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 text-white font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-6 py-3.5 rounded-sm bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-mono text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shadow-md"
               >
-                <span>Read Full Wire →</span>
+                <Radio size={14} />
+                <span>Open Dedicated Research Wire →</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsRssModalOpen(true)}
+                className="px-4 py-3.5 rounded-sm bg-[#161B26] hover:bg-[#1E2536] border border-white/10 hover:border-[#C89B3C]/40 text-neutral-300 hover:text-white font-mono text-xs transition-colors cursor-pointer flex items-center gap-2"
+                title="Subscribe via RSS 2.0"
+              >
+                <Rss size={13} className="text-[#C89B3C]" />
+                <span>RSS 2.0</span>
               </button>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            
-            {/* Story 1 */}
-            <div className="p-6 rounded-lg bg-[#10141D] border border-white/10 space-y-3">
-              <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                <span className="text-[#C89B3C]">House v. NCAA</span>
-                <span>October 2026</span>
-              </div>
-              <h4 className="font-display font-bold text-base text-white hover:text-[#E8C98B] transition-colors">
-                The Post-House Settlement: Direct Campus Revenue Sharing Standard
-              </h4>
-              <p className="text-xs text-neutral-300 font-light leading-relaxed">
-                Analysis of the federal court antitrust ruling and how intercollegiate varsity gaming programs are classified under new revenue distribution formulas.
-              </p>
-            </div>
-
-            {/* Story 2 */}
-            <div className="p-6 rounded-lg bg-[#10141D] border border-white/10 space-y-3">
-              <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                <span className="text-[#38BDF8]">Media Syndication</span>
-                <span>October 2026</span>
-              </div>
-              <h4 className="font-display font-bold text-base text-white hover:text-[#E8C98B] transition-colors">
-                FAST Linear Syndication & Campus Broadcast Rights
-              </h4>
-              <p className="text-xs text-neutral-300 font-light leading-relaxed">
-                How College Company's broadcast network is packaging collegiate live sports for television streaming platforms without cable exclusivity barriers.
-              </p>
-            </div>
-
-            {/* Story 3 */}
-            <div className="p-6 rounded-lg bg-[#10141D] border border-white/10 space-y-3">
-              <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                <span className="text-[#68D391]">NIL Escrow</span>
-                <span>October 2026</span>
-              </div>
-              <h4 className="font-display font-bold text-base text-white hover:text-[#E8C98B] transition-colors">
-                Uniform Escrow Protection Standard for 14,000+ Competitors
-              </h4>
-              <p className="text-xs text-neutral-300 font-light leading-relaxed">
-                Establishing standardized corporate escrow holding accounts that guarantee 100% on-time payouts for collegiate student-athlete endorsements.
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 7. PUBLIC NEWSLETTER SIGNUP */}
-      {/* ========================================================================= */}
-      <section className="py-16 md:py-24 bg-[#090A0C]">
-        <div className="max-w-[1100px] mx-auto px-6">
-          <NewsletterSignup variant="card" />
         </div>
       </section>
 

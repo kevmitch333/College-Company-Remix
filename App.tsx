@@ -989,15 +989,18 @@ export const App: React.FC = () => {
           {navMode === 'consumer' ? (
             <nav className="hidden xl:flex items-center gap-7 text-xs uppercase tracking-[0.16em] font-medium text-neutral-400">
               <button
-                onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer text-[#C89B3C]"
+                onClick={() => { setActiveTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer ${activeTab === 'overview' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
                 Vision & Overview
               </button>
               <button
                 onClick={() => { 
-                  const el = document.getElementById('consumer-pillars');
-                  el?.scrollIntoView({ behavior: 'smooth' });
+                  if (activeTab !== 'overview') setActiveTab('overview');
+                  setTimeout(() => {
+                    const el = document.getElementById('consumer-pillars');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }, 50);
                 }}
                 className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer"
               >
@@ -1014,26 +1017,33 @@ export const App: React.FC = () => {
                 <span className="px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-[9px] font-mono text-neutral-300">Spotlight</span>
               </button>
               <button
-                onClick={() => setIsAccessGateModalOpen(true)}
+                onClick={() => { 
+                  if (activeTab !== 'overview') setActiveTab('overview');
+                  setTimeout(() => {
+                    const el = document.getElementById('robust-tools-catalog');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }, 50);
+                }}
                 className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer flex items-center gap-1.5 text-neutral-300 hover:text-white"
               >
                 <Lock size={12} className="text-[#C89B3C]" />
-                <span>Access Tiers</span>
+                <span>Tools Wall</span>
               </button>
               <button
                 onClick={() => {
-                  handleSwitchMode('portal');
                   setActiveTab('editorial');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer"
+                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer flex items-center gap-1.5 ${activeTab === 'editorial' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
-                News & RSS
+                <Radio size={12} className="text-[#C89B3C]" />
+                <span>Research Wire</span>
               </button>
               <button
                 onClick={() => handleSwitchMode('portal')}
                 className="hover:text-[#E8C98B] text-[#C89B3C] font-semibold transition-colors pb-1.5 cursor-pointer flex items-center gap-1"
               >
-                <span>Enter Private Portal</span>
+                <span>Enter Member Portal</span>
                 <ArrowRight size={12} />
               </button>
             </nav>
@@ -1921,7 +1931,7 @@ export const App: React.FC = () => {
       {/* MAIN CONTENT ROUTING */}
       {/* ========================================================================= */}
       <main className="flex-grow overflow-x-hidden">
-        {navMode === 'consumer' ? (
+        {navMode === 'consumer' && activeTab === 'overview' ? (
           <ConsumerPublicView 
             onOpenAccessModal={(targetToolId) => {
               setSelectedToolForModal(targetToolId);
@@ -1938,7 +1948,10 @@ export const App: React.FC = () => {
                 else if (actionModal === 'financial-report') setIsFinancialReportModalOpen(true);
                 else if (actionModal === 'network') setIsNetworkModalOpen(true);
               }
-              handleSwitchMode('portal');
+              if (targetTab !== 'editorial') {
+                handleSwitchMode('portal');
+              }
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             currentProfile={userProfile}
             currentTier={userProfile.tier}
@@ -2753,78 +2766,32 @@ export const App: React.FC = () => {
             </section>
 
             {/* ========================================================================= */}
-            {/* 6. COLLEGIATE INTELLIGENCE & MARKET SIGNALS (Executive Preview) */}
+            {/* 6. COLLEGIATE INTELLIGENCE & RESEARCH WIRE (SEPARATE PAGE CALLOUT) */}
             {/* ========================================================================= */}
-            <section className="py-20 md:py-24 border-b border-white/[0.08] bg-[#0A0D12]">
-              <div className="max-w-[1360px] mx-auto px-6 space-y-10">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <section className="py-14 md:py-16 border-b border-white/[0.08] bg-[#0A0D12]">
+              <div className="max-w-[1360px] mx-auto px-6 space-y-8">
+                
+                <div className="p-6 sm:p-8 rounded-lg bg-[#11141B] border border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="space-y-2 max-w-2xl">
                     <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-widest flex items-center gap-1.5">
                       <Radio size={13} className="text-[#C89B3C]" />
                       <span>Collegiate Intelligence · Research Wire</span>
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
-                      Grounding the Structural Shift in Higher Education
-                    </h2>
-                    <p className="text-neutral-400 text-sm leading-relaxed">
-                      Continuous monitoring of legal antitrust developments, NCAA revenue sharing directives, and national varsity expansion.
+                    <h3 className="text-xl sm:text-2xl font-display font-bold text-white tracking-tight">
+                      Grounded Antitrust Briefs, NCAA Directives & Media Wire
+                    </h3>
+                    <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed">
+                      Continuous monitoring of House v. NCAA directives, 50-state statutory NIL collective bylaws, and linear broadcast syndication has moved to its own dedicated page.
                     </p>
                   </div>
 
                   <button
                     onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('market_wire'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className="px-5 py-2.5 bg-[#171C26] hover:bg-[#202735] border border-[#C89B3C]/30 text-[#E8C98B] hover:text-white text-xs font-mono rounded-sm transition-colors flex items-center gap-2 cursor-pointer self-start md:self-auto"
+                    className="px-5 py-2.5 bg-[#171C26] hover:bg-[#202735] border border-[#C89B3C]/40 text-[#E8C98B] hover:text-white text-xs font-mono rounded-sm transition-colors flex items-center gap-2 cursor-pointer self-start md:self-auto shrink-0 shadow-sm"
                   >
-                    <span>Open Live Grounded Research Hub →</span>
+                    <Radio size={13} />
+                    <span>Open Research Wire Page →</span>
                   </button>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="p-6 rounded-lg bg-[#11141B] border border-white/[0.08] space-y-3 hover:border-white/20 transition-colors">
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-[#C89B3C]">House v. NCAA Settlement</span>
-                      <span className="text-neutral-500">Sports Business Journal</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white font-display">
-                      Landmark $2.8B Revenue-Sharing Framework Cleared for Power-4 Athletics
-                    </h3>
-                    <p className="text-xs text-neutral-300 leading-relaxed font-light">
-                      Federal judge issues preliminary approval establishing the formalized mechanism for athletic departments 
-                      to directly share up to $22M annually with rostered student-athletes starting 2025.
-                    </p>
-                    <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                      <span>Fiduciary Impact: Accelerated commercial consolidation</span>
-                      <button 
-                        onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('market_wire'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className="text-[#C89B3C] hover:underline cursor-pointer"
-                      >
-                        Read Grounded Brief →
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-lg bg-[#11141B] border border-white/[0.08] space-y-3 hover:border-white/20 transition-colors">
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-[#68D391]">FAST Syndication</span>
-                      <span className="text-neutral-500">Broadcasting & Cable</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white font-display">
-                      Collegiate Esports TV and Conference Digital Circuits Expand Linear Carriage
-                    </h3>
-                    <p className="text-xs text-neutral-300 leading-relaxed font-light">
-                      Multi-year expansion across connected TV ecosystems, establishing dedicated 24/7 student-athlete 
-                      competition broadcasts and verified campus highlights.
-                    </p>
-                    <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                      <span>Fiduciary Impact: Syndicated advertising inventory monetization</span>
-                      <button 
-                        onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('editorial'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className="text-[#C89B3C] hover:underline cursor-pointer"
-                      >
-                        Read Editorial Dispatch →
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Institutional AI Multi-Agent Mesh Spotlight Card */}
@@ -4097,6 +4064,26 @@ export const App: React.FC = () => {
           <section className="py-12 md:py-16 bg-[#090A0C]">
             <div className="max-w-[1360px] mx-auto px-6 space-y-8">
               
+              {/* Top Navigation Breadcrumb & Return to Homepage Link */}
+              <div className="flex items-center justify-between pb-2 border-b border-white/[0.05]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('overview');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="inline-flex items-center gap-2 text-xs font-mono text-[#C89B3C] hover:text-[#E8C98B] transition-colors cursor-pointer group"
+                >
+                  <ArrowRight size={13} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
+                  <span>Return to Homepage & Overview</span>
+                </button>
+
+                <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#68D391] animate-pulse"></span>
+                  <span>Separate Research & Market Wire Engine</span>
+                </div>
+              </div>
+
               {/* Intelligence Sub-View Selector */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
                 <div>
