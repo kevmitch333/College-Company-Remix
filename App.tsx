@@ -4694,7 +4694,7 @@ export const App: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-bold text-white font-display text-base">1. The Market Inefficiency</h4>
+                <h3 className="font-bold text-white font-display text-base">1. The Market Inefficiency</h3>
                 <p>
                   Over the past decade, high school and collegiate sports have witnessed an undeniable demographic inflection point: 
                   over 84% of university students identify as active video game players, and varsity digital sports programs 
@@ -4702,14 +4702,14 @@ export const App: React.FC = () => {
                   of underfunded student clubs and regional organizers with no consolidated rights holder.
                 </p>
                 
-                <h4 className="font-bold text-white font-display text-base">2. The College Company Solution</h4>
+                <h3 className="font-bold text-white font-display text-base">2. The College Company Solution</h3>
                 <p>
                   College Company operates as an integrated holding group. By owning the definitive IP real estate—including the 
                   College Esports Expo (CEX), College Esports NIL, and nationwide leagues for drone racing and sim motorsports—the 
                   company commands immediate organic mindshare and bypasses traditional customer acquisition hurdles.
                 </p>
 
-                <h4 className="font-bold text-white font-display text-base">3. Revenue Mechanics & Capital Efficiency</h4>
+                <h3 className="font-bold text-white font-display text-base">3. Revenue Mechanics & Capital Efficiency</h3>
                 <p>
                   Revenue is diversified across four complementary engines:
                 </p>
@@ -4720,7 +4720,7 @@ export const App: React.FC = () => {
                   <li><strong className="text-white">Direct Merchandising:</strong> Technical varsity apparel and commemorative hardware.</li>
                 </ul>
 
-                <h4 className="font-bold text-white font-display text-base">4. Capital Allocation & Expansion Roadmap</h4>
+                <h3 className="font-bold text-white font-display text-base">4. Capital Allocation & Expansion Roadmap</h3>
                 <p>
                   Series A proceeds are earmarked for expanding campus varsity deployments from 150 to 450 institutions, 
                   scaling linear FAST channel distribution for College Esports TV, and expanding the proprietary NIL legal compliance network.

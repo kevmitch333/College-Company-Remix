@@ -430,12 +430,12 @@ export const ConsumerPublicView: React.FC<ConsumerPublicViewProps> = ({
                 <span className="px-2.5 py-1 rounded bg-red-950/40 border border-red-500/30 text-red-400 font-mono text-xs uppercase tracking-wider font-semibold">
                   The Fragmented Past
                 </span>
-                <span className="text-neutral-500 text-xs font-mono">Unorganized & Risky</span>
+                <span className="text-neutral-400 text-xs font-mono">Unorganized & Risky</span>
               </div>
 
-              <h4 className="text-lg font-display font-bold text-neutral-200">
+              <h3 className="text-lg font-display font-bold text-neutral-200">
                 Informal Student Clubs & Grey-Market Chaos
-              </h4>
+              </h3>
 
               <ul className="space-y-3 text-xs sm:text-sm text-neutral-400">
                 <li className="flex items-start gap-2.5">
@@ -471,9 +471,9 @@ export const ConsumerPublicView: React.FC<ConsumerPublicViewProps> = ({
                 </span>
               </div>
 
-              <h4 className="text-lg font-display font-bold text-white relative z-10">
+              <h3 className="text-lg font-display font-bold text-white relative z-10">
                 Legitimate Holding Governance & Universal Standards
-              </h4>
+              </h3>
 
               <ul className="space-y-3 text-xs sm:text-sm text-neutral-300 relative z-10">
                 <li className="flex items-start gap-2.5">
@@ -543,12 +543,12 @@ export const ConsumerPublicView: React.FC<ConsumerPublicViewProps> = ({
                     >
                       {h.division}
                     </span>
-                    <span className="text-[10px] font-mono text-neutral-500">0{i + 1}</span>
+                    <span className="text-[10px] font-mono text-neutral-400">0{i + 1}</span>
                   </div>
 
-                  <h4 className="font-display font-bold text-base text-white group-hover:text-[#E8C98B] transition-colors">
+                  <h3 className="font-display font-bold text-base text-white group-hover:text-[#E8C98B] transition-colors">
                     {h.name}
-                  </h4>
+                  </h3>
 
                   <p className="text-xs text-neutral-400 font-mono">
                     {h.tagline}
@@ -580,9 +580,9 @@ export const ConsumerPublicView: React.FC<ConsumerPublicViewProps> = ({
                 <Lock size={18} />
               </div>
               <div>
-                <h5 className="font-display font-bold text-sm text-white">
+                <h4 className="font-display font-bold text-sm text-white">
                   39 Additional Specialized Properties Held in Private Portfolio
-                </h5>
+                </h4>
                 <p className="text-xs text-neutral-400 font-light">
                   Domain assets, campus flight dome blueprints, and media valuation models are confidential for accredited members.
                 </p>
@@ -677,9 +677,9 @@ export const ConsumerPublicView: React.FC<ConsumerPublicViewProps> = ({
                       )}
                     </div>
 
-                    <h4 className="font-display font-bold text-lg text-white group-hover:text-[#E8C98B] transition-colors">
+                    <h3 className="font-display font-bold text-lg text-white group-hover:text-[#E8C98B] transition-colors">
                       {tool.name}
-                    </h4>
+                    </h3>
 
                     <p className="text-xs text-neutral-300 font-light leading-relaxed">
                       {tool.description}

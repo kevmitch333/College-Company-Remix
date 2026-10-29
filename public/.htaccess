@@ -1,3 +1,29 @@
+# Disable Directory Browsing and Server Signatures
+Options -Indexes
+ServerSignature Off
+
+# Block access to sensitive source, environment, and configuration files
+<FilesMatch "^\.|\.(json|lock|ts|tsx|md|env|yml|yaml|sh|config\.js)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Allow public metadata and feed files
+<FilesMatch "^(manifest|robots|sitemap|rss)\.">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+  </IfModule>
+</FilesMatch>
+
 # Hostinger & Apache / LiteSpeed SPA Router Configuration
 <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -25,16 +51,19 @@
   # 5. Referrer leakage prevention
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
-  # 6. Sensitive browser hardware permissions lockdown
+  # 6. Disable legacy reflected XSS filter (OWASP standard, superseded by CSP)
+  Header always set X-XSS-Protection "0"
+
+  # 7. Sensitive browser hardware permissions lockdown
   Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
 
-  # 7. Cross-Origin-Opener-Policy (COOP) allowing necessary OAuth/popup flows
+  # 8. Cross-Origin-Opener-Policy (COOP) allowing necessary OAuth/popup flows
   Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
 
-  # 8. Cross-Origin-Resource-Policy (CORP) protecting internal assets
+  # 9. Cross-Origin-Resource-Policy (CORP) protecting internal assets
   Header always set Cross-Origin-Resource-Policy "same-origin"
 
-  # 9. Hardened Content-Security-Policy (CSP) with base-uri, default-src, object-src 'none'
+  # 10. Hardened Content-Security-Policy (CSP) with base-uri, default-src, object-src 'none'
   Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com https://college.company https://*.run.app; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-ancestors 'self' https://*.google.com https://*.run.app; upgrade-insecure-requests;"
 </IfModule>
 

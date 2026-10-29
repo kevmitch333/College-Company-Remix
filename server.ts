@@ -20,6 +20,7 @@ app.use((_req, res, next) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-XSS-Protection', '0');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
@@ -31,7 +32,41 @@ app.use((_req, res, next) => {
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+// Lightweight in-memory rate limiter for API endpoints (prevents DoS & brute force)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 60;
+
+function apiRateLimiter(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const ip = req.ip || (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const clientData = rateLimitMap.get(ip) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW_MS };
+
+  if (now > clientData.resetTime) {
+    clientData.count = 1;
+    clientData.resetTime = now + RATE_LIMIT_WINDOW_MS;
+  } else {
+    clientData.count++;
+  }
+
+  rateLimitMap.set(ip, clientData);
+
+  if (rateLimitMap.size > 5000) {
+    for (const [key, value] of rateLimitMap.entries()) {
+      if (now > value.resetTime) rateLimitMap.delete(key);
+    }
+  }
+
+  if (clientData.count > MAX_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({
+      error: 'Rate limit exceeded. Please wait a moment before sending more requests.',
+      retryAfter: Math.ceil((clientData.resetTime - now) / 1000)
+    });
+  }
+  next();
+}
 
 // Health check endpoint for Cloud Run container monitoring
 app.get('/health', (_req, res) => {
@@ -134,8 +169,12 @@ const VERIFIED_FALLBACK_HEADLINES = [
   }
 ];
 
-app.post('/api/market-intelligence', async (req, res) => {
-  const { category, query } = req.body || {};
+app.post('/api/market-intelligence', apiRateLimiter, async (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const rawCategory = typeof body.category === 'string' ? body.category.trim().slice(0, 100) : '';
+  const rawQuery = typeof body.query === 'string' ? body.query.trim().slice(0, 300) : '';
+  const category = rawCategory;
+  const query = rawQuery;
 
   if (!ai) {
     let filtered = VERIFIED_FALLBACK_HEADLINES;
@@ -266,7 +305,7 @@ const SUB_AGENTS_METADATA = {
   }
 };
 
-app.post('/api/orchestrator', async (req, res) => {
+app.post('/api/orchestrator', apiRateLimiter, async (req, res) => {
   const {
     message,
     role = 'athletic_director',
@@ -280,6 +319,9 @@ app.post('/api/orchestrator', async (req, res) => {
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ error: 'A valid message string is required.' });
   }
+
+  // Defensively constrain input length to prevent prompt exhaustion attacks
+  const sanitizedMessage = message.slice(0, 4000);
 
   // 1. Supervisor Intent Routing
   let resolvedAgentId = agentId;
@@ -349,7 +391,7 @@ Your Mandate:
 
       const contents = [
         ...formattedHistory,
-        { role: 'user', parts: [{ text: message }] }
+        { role: 'user', parts: [{ text: sanitizedMessage }] }
       ];
 
       const response = await ai.models.generateContent({
@@ -372,7 +414,7 @@ Your Mandate:
         }));
 
       // Generate structured audit tool execution card based on sub-agent
-      const toolCard = generateToolCardForSubAgent(resolvedAgentId, message, university);
+      const toolCard = generateToolCardForSubAgent(resolvedAgentId, sanitizedMessage, university);
 
       return res.json({
         success: true,
