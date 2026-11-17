@@ -88,7 +88,8 @@ import {
   getRequiredTierForTab,
   TIER_DEFINITIONS,
   DEMO_PRESET_PROFILES,
-  PENDING_DEMO_PROFILE
+  PENDING_DEMO_PROFILE,
+  PUBLIC_SPOTLIGHT_BRAND_NAMES
 } from './src/utils/accessTiers';
 import { downloadFinancialPDF, downloadFinancialCSV, calculateFinancialMetrics } from './src/utils/exportFinancialReport';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -770,11 +771,25 @@ const INSTITUTIONAL_DEFAULT_IMAGES: HeroImageConfig[] = [
 ];
 
 export const App: React.FC = () => {
-  // Navigation Mode: 'consumer' (simplified public digest) or 'portal' (institutional secured workspace)
+  // Navigation Mode: kept synced with authentication state while preserving override compatibility
   const [navMode, setNavMode] = useState<'consumer' | 'portal'>(() => getSavedMode());
   const [userProfile, setUserProfile] = useState<AccessProfile>(() => getSavedProfile());
   const [isAccessGateModalOpen, setIsAccessGateModalOpen] = useState(false);
   const [selectedToolForModal, setSelectedToolForModal] = useState<string | undefined>(undefined);
+  const [evaluatorMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('demo') === '1' ||
+      localStorage.getItem('cc_evaluator_mode') === 'true';
+  });
+
+  const isApproved = userProfile.membershipStatus === 'approved' && userProfile.tier >= 1;
+  const hasAccess = (reqTier: AccessTier) =>
+    reqTier === 0 || (userProfile.membershipStatus === 'approved' && userProfile.tier >= reqTier);
+
+  const openGateFor = (toolId?: string) => {
+    setSelectedToolForModal(toolId);
+    setIsAccessGateModalOpen(true);
+  };
 
   const handleSwitchMode = (newMode: 'consumer' | 'portal') => {
     setNavMode(newMode);
@@ -793,11 +808,19 @@ export const App: React.FC = () => {
     };
     setUserProfile(updated);
     saveProfile(updated);
+    if (updated.membershipStatus === 'approved' && tier > 0) {
+      setNavMode('portal');
+      saveMode('portal');
+    } else if (tier === 0) {
+      setNavMode('consumer');
+      saveMode('consumer');
+    }
   };
 
   // Navigation & View States
   const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator'>('overview');
   const [holdingsSubTab, setHoldingsSubTab] = useState<'directory' | 'map' | 'topology'>('directory');
+  const [strategySubTab, setStrategySubTab] = useState<'plan' | 'nil_calculator'>('plan');
   const [governanceSubTab, setGovernanceSubTab] = useState<'overview' | 'compliance-dashboard' | 'repository' | 'risks' | 'memo'>('overview');
   const [intelligenceSubTab, setIntelligenceSubTab] = useState<'editorial' | 'market_wire' | 'newsletter'>('editorial');
   const [selectedAudience, setSelectedAudience] = useState<'all' | 'university' | 'brands' | 'investors' | 'athletes'>('all');
@@ -806,6 +829,95 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'bento' | 'table'>('bento');
   const [selectedBrand, setSelectedBrand] = useState<PortfolioBrand | null>(null);
+
+  const navigateTo = (
+    tab: 'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator',
+    subTab?: string
+  ) => {
+    setActiveTab(tab);
+    setIsMobileNavOpen(false);
+    if (tab === 'holdings' && subTab) {
+      setHoldingsSubTab(subTab as any);
+    } else if (tab === 'strategy') {
+      setStrategySubTab(subTab === 'nil_calculator' ? 'nil_calculator' : 'plan');
+    } else if (tab === 'financials' && subTab) {
+      setFinancialSubTab(subTab as any);
+    } else if (tab === 'governance' && subTab) {
+      setGovernanceSubTab(subTab as any);
+    } else if (tab === 'editorial' && subTab) {
+      setIntelligenceSubTab(subTab as any);
+    } else if (tab === 'orchestrator' && subTab) {
+      if (subTab === 'nil') {
+        setOrchestratorAgent('nil_compliance');
+        setOrchestratorRole('athletic_director');
+      } else if (subTab === 'tournament') {
+        setOrchestratorAgent('tournament_ops');
+        setOrchestratorRole('athletic_director');
+      } else if (subTab === 'broadcast') {
+        setOrchestratorAgent('media_fast');
+        setOrchestratorRole('brand');
+      } else if (subTab === 'capital') {
+        setOrchestratorAgent('fiduciary_ir');
+        setOrchestratorRole('investor');
+      }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToPublicSection = (sectionId: string) => {
+    setActiveTab('overview');
+    setIsMobileNavOpen(false);
+    setTimeout(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    }, 60);
+  };
+
+  // Gated Modal Openers (Enforce membership wall across all triggers)
+  const openNilAlerts = () => {
+    if (hasAccess(1)) setIsNilAlertsOpen(true);
+    else openGateFor('nil-opportunity-radar');
+  };
+
+  const openMemberNetwork = (recipientId?: string | null) => {
+    if (hasAccess(1)) {
+      setSelectedDirectMessageUser(recipientId ?? null);
+      setIsNetworkModalOpen(true);
+    } else {
+      openGateFor('member-peer-network');
+    }
+  };
+
+  const openCompliancePortal = () => {
+    if (hasAccess(2)) setIsCompliancePortalOpen(true);
+    else openGateFor('regulatory-audit-table');
+  };
+
+  const openExecutiveMemo = () => {
+    if (hasAccess(2)) setIsMemoOpen(true);
+    else openGateFor('regulatory-audit-table');
+  };
+
+  const openFinancialReport = () => {
+    if (hasAccess(3)) setIsFinancialReportModalOpen(true);
+    else openGateFor('dcf-financial-modeler');
+  };
+
+  const openOrchestratorModal = (prompt = '') => {
+    if (hasAccess(3)) {
+      setOrchestratorPrompt(prompt);
+      setIsOrchestratorModalOpen(true);
+    } else {
+      openGateFor('ai-orchestrator');
+    }
+  };
+
+  const openBrandDossier = (brand: PortfolioBrand) => {
+    if (hasAccess(1) || PUBLIC_SPOTLIGHT_BRAND_NAMES.includes(brand.name)) {
+      setSelectedBrand(brand);
+    } else {
+      openGateFor('holding-directory-map');
+    }
+  };
 
   // Conversational AI Orchestrator State
   const [isOrchestratorModalOpen, setIsOrchestratorModalOpen] = useState(false);
@@ -967,301 +1079,196 @@ export const App: React.FC = () => {
       {/* ========================================================================= */}
       {/* 1. TOP BAR (Strict 3-Zone Top Bar Contract) */}
       {/* ========================================================================= */}
-      <header className="sticky top-0 z-40 bg-[#090A0C]/90 backdrop-blur-md border-b border-white/[0.08]">
-        <div className="max-w-[1360px] mx-auto px-6 h-18 flex items-center justify-between">
-          
-          {/* Zone 1: Single text element wordmark / iconic lockup */}
-          <div 
-            onClick={() => { 
-              if (navMode === 'consumer') {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              } else {
-                setActiveTab('overview'); 
-                window.scrollTo({ top: 0, behavior: 'smooth' }); 
-              }
-            }}
-            className="flex items-center"
+      <header className="sticky top-0 z-40 bg-[#090A0C]/92 backdrop-blur-md border-b border-white/[0.08]">
+        <div className="max-w-[1360px] mx-auto px-6 h-[68px] flex items-center justify-between gap-4">
+
+          {/* Zone 1: Brand Wordmark */}
+          <div
+            onClick={() => navigateTo('overview')}
+            className="flex items-center shrink-0"
           >
             <SovereignLogo />
           </div>
 
-          {/* Zone 2: Navigation Links depending on Mode */}
-          {navMode === 'consumer' ? (
-            <nav className="hidden xl:flex items-center gap-7 text-xs uppercase tracking-[0.16em] font-medium text-neutral-400">
+          {/* Zone 2: Unified Auth-Aware Navigation Links */}
+          {!isApproved ? (
+            <nav className="hidden xl:flex items-center gap-7 text-xs uppercase tracking-[0.15em] font-medium text-neutral-400">
               <button
-                onClick={() => { setActiveTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer ${activeTab === 'overview' ? 'text-[#C89B3C] font-semibold' : ''}`}
+                type="button"
+                onClick={() => navigateTo('overview')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 cursor-pointer ${activeTab === 'overview' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
-                Vision & Overview
+                Overview
               </button>
               <button
-                onClick={() => { 
-                  if (activeTab !== 'overview') setActiveTab('overview');
-                  setTimeout(() => {
-                    const el = document.getElementById('consumer-pillars');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }, 50);
-                }}
-                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer"
+                type="button"
+                onClick={() => scrollToPublicSection('consumer-pillars')}
+                className="hover:text-[#F5F5F3] transition-colors py-1 cursor-pointer"
               >
-                Four Pillars
+                Ecosystem
               </button>
               <button
-                onClick={() => {
-                  handleSwitchMode('portal');
-                  setActiveTab('holdings');
-                }}
-                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer flex items-center gap-1.5"
+                type="button"
+                onClick={() => scrollToPublicSection('public-spotlight')}
+                className="hover:text-[#F5F5F3] transition-colors py-1 cursor-pointer"
               >
-                <span>43 Holdings</span>
-                <span className="px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-[9px] font-mono text-neutral-300">Spotlight</span>
+                Spotlight
               </button>
               <button
-                onClick={() => { 
-                  if (activeTab !== 'overview') setActiveTab('overview');
-                  setTimeout(() => {
-                    const el = document.getElementById('robust-tools-catalog');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }, 50);
-                }}
-                className="hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer flex items-center gap-1.5 text-neutral-300 hover:text-white"
+                type="button"
+                onClick={() => scrollToPublicSection('membership-tiers')}
+                className="hover:text-[#F5F5F3] transition-colors py-1 cursor-pointer flex items-center gap-1.5"
               >
-                <Lock size={12} className="text-[#C89B3C]" />
-                <span>Tools Wall</span>
+                <Lock size={11} className="text-[#C89B3C]" />
+                <span>Membership</span>
               </button>
               <button
-                onClick={() => {
-                  setActiveTab('editorial');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 cursor-pointer flex items-center gap-1.5 ${activeTab === 'editorial' ? 'text-[#C89B3C] font-semibold' : ''}`}
+                type="button"
+                onClick={() => navigateTo('editorial', 'editorial')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 cursor-pointer flex items-center gap-1.5 ${activeTab === 'editorial' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
                 <Radio size={12} className="text-[#C89B3C]" />
                 <span>Research Wire</span>
               </button>
-              <button
-                onClick={() => handleSwitchMode('portal')}
-                className="hover:text-[#E8C98B] text-[#C89B3C] font-semibold transition-colors pb-1.5 cursor-pointer flex items-center gap-1"
-              >
-                <span>Enter Member Portal</span>
-                <ArrowRight size={12} />
-              </button>
             </nav>
           ) : (
-            <nav className="hidden xl:flex items-center gap-6 text-xs uppercase tracking-[0.15em] font-medium text-neutral-400">
+            <nav className="hidden xl:flex items-center gap-6 text-xs uppercase tracking-[0.14em] font-medium text-neutral-400">
               <button
-                onClick={() => { setActiveTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'overview' ? 'text-[#C89B3C]' : ''}`}
+                type="button"
+                onClick={() => navigateTo('overview')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 relative cursor-pointer ${activeTab === 'overview' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
-                Thesis
-                {activeTab === 'overview' && (
-                  <motion.div
-                    layoutId="activeTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  />
-                )}
+                Overview
               </button>
               <button
-                onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('directory'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer flex items-center gap-1 ${activeTab === 'holdings' ? 'text-[#C89B3C]' : ''}`}
+                type="button"
+                onClick={() => navigateTo('holdings', 'directory')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 relative cursor-pointer ${activeTab === 'holdings' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
-                {userProfile.tier < 1 && <Lock size={11} className="text-neutral-500" />}
-                <span>Holdings</span>
-                {activeTab === 'holdings' && (
-                  <motion.div
-                    layoutId="activeTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  />
-                )}
+                Holdings
               </button>
               <button
-                onClick={() => { setActiveTab('strategy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative flex items-center gap-1.5 cursor-pointer ${activeTab === 'strategy' ? 'text-[#C89B3C]' : ''}`}
+                type="button"
+                onClick={() => navigateTo('strategy', 'plan')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 relative cursor-pointer ${activeTab === 'strategy' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
-                {userProfile.tier < 1 && <Lock size={11} className="text-neutral-500" />}
-                <span>Strategy</span>
-                <span className="px-1.5 py-0.2 rounded bg-[#C89B3C]/15 border border-[#C89B3C]/30 text-[9px] font-mono text-[#E8C98B]">v1.0</span>
-                {activeTab === 'strategy' && (
-                  <motion.div
-                    layoutId="activeTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  />
-                )}
+                Strategy & NIL
               </button>
               <button
-                onClick={() => { setActiveTab('financials'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer flex items-center gap-1 ${activeTab === 'financials' ? 'text-[#C89B3C]' : ''}`}
-              >
-                {userProfile.tier < 3 && <Lock size={11} className="text-neutral-500" />}
-                <span>Financials</span>
-                {activeTab === 'financials' && (
-                  <motion.div
-                    layoutId="activeTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  />
-                )}
-              </button>
-              <button
-                onClick={() => { setActiveTab('governance'); setGovernanceSubTab('overview'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer flex items-center gap-1 ${activeTab === 'governance' ? 'text-[#C89B3C]' : ''}`}
+                type="button"
+                onClick={() => navigateTo('governance', 'overview')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 relative cursor-pointer flex items-center gap-1 ${activeTab === 'governance' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
                 {userProfile.tier < 2 && <Lock size={11} className="text-neutral-500" />}
                 <span>Governance</span>
-                {activeTab === 'governance' && (
-                  <motion.div
-                    layoutId="activeTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  />
-                )}
               </button>
               <button
-                onClick={() => { setActiveTab('editorial'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative cursor-pointer ${activeTab === 'editorial' ? 'text-[#C89B3C]' : ''}`}
+                type="button"
+                onClick={() => navigateTo('financials', 'simulator')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 relative cursor-pointer flex items-center gap-1 ${activeTab === 'financials' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
-                Intelligence
-                {activeTab === 'editorial' && (
-                  <motion.div
-                    layoutId="activeTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  />
-                )}
+                {userProfile.tier < 3 && <Lock size={11} className="text-neutral-500" />}
+                <span>Financials</span>
               </button>
               <button
-                onClick={() => { setActiveTab('orchestrator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                className={`hover:text-[#F5F5F3] transition-colors pb-1.5 relative flex items-center gap-1.5 cursor-pointer ${activeTab === 'orchestrator' ? 'text-[#C89B3C]' : ''}`}
+                type="button"
+                onClick={() => navigateTo('editorial', 'editorial')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 relative cursor-pointer ${activeTab === 'editorial' ? 'text-[#C89B3C] font-semibold' : ''}`}
               >
-                <BrainCircuit size={13} className={activeTab === 'orchestrator' ? 'text-[#C89B3C]' : 'text-neutral-400'} />
-                <span>AI Orchestrator</span>
-                {userProfile.tier < 3 ? (
-                  <Lock size={10} className="text-neutral-500" />
-                ) : (
-                  <span className="px-1.5 py-0.2 rounded bg-[#68D391]/15 border border-[#68D391]/30 text-[9px] font-mono text-[#68D391] flex items-center gap-1">
-                    <span className="w-1 h-1 rounded-full bg-[#68D391] animate-pulse"></span>
-                    400+
-                  </span>
-                )}
-                {activeTab === 'orchestrator' && (
-                  <motion.div
-                    layoutId="activeTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C89B3C]"
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  />
-                )}
+                Research Wire
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo('orchestrator')}
+                className={`hover:text-[#F5F5F3] transition-colors py-1 relative flex items-center gap-1 cursor-pointer ${activeTab === 'orchestrator' ? 'text-[#C89B3C] font-semibold' : ''}`}
+              >
+                {userProfile.tier < 3 && <Lock size={11} className="text-neutral-500" />}
+                <span>AI Mesh</span>
               </button>
             </nav>
           )}
 
-          {/* Zone 3: Mode Switcher, Clearance Badge & Primary Actions */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* View Mode Switcher Pill */}
-            <div className="flex items-center p-0.5 rounded-sm bg-[#11151F] border border-white/10 text-xs font-mono">
-              <button
-                type="button"
-                onClick={() => handleSwitchMode('consumer')}
-                className={`px-2.5 py-1 rounded-xs transition-all cursor-pointer flex items-center gap-1.5 ${
-                  navMode === 'consumer'
-                    ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-xs'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Simplified, digestible public overview"
-              >
-                <Globe size={11} />
-                <span>Public</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSwitchMode('portal')}
-                className={`px-2.5 py-1 rounded-xs transition-all cursor-pointer flex items-center gap-1.5 ${
-                  navMode === 'portal'
-                    ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-xs'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Institutional data rooms, holdings, and tools"
-              >
-                <ShieldCheck size={11} />
-                <span>Private Portal</span>
-              </button>
-            </div>
-
-            {/* Clearance & Access Tier Trigger */}
+          {/* Zone 3: Search, Member Status / Sign-In & Primary CTA */}
+          <div className="flex items-center gap-2">
+            {/* Gate-Aware Omni Search */}
             <button
-              onClick={() => setIsAccessGateModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono group shadow-sm cursor-pointer"
-              title="Manage Institutional Clearance & Access Tiers"
-            >
-              {userProfile.tier > 0 ? (
-                <>
-                  <ShieldCheck size={14} className="text-[#68D391]" />
-                  <span className="hidden xl:inline text-white font-medium truncate max-w-[100px]">{userProfile.displayName}</span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#C89B3C] text-[#090A0C]">
-                    T{userProfile.tier}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Lock size={13} className="text-[#C89B3C]" />
-                  <span className="hidden sm:inline">Access</span>
-                  <span className="text-[10px] text-[#C89B3C] font-semibold">Tier 0</span>
-                </>
-              )}
-            </button>
-
-            {/* Quick Find / Omni-Search Trigger (Cmd+K) */}
-            <button
+              type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono group shadow-sm cursor-pointer"
-              title="Quick Find: 43 Holdings, TAM Models, NCAA Bylaws (⌘K)"
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono cursor-pointer"
+              title="Search Platform (⌘K)"
             >
-              <Search size={13} className="text-[#C89B3C] group-hover:scale-110 transition-transform" />
-              <span className="hidden md:inline text-neutral-300">Quick Find</span>
-              <kbd className="hidden lg:inline-block px-1.5 py-0.2 rounded text-[10px] font-mono bg-white/5 border border-white/10 text-neutral-400 group-hover:text-white">
+              <Search size={13} className="text-[#C89B3C]" />
+              <span className="hidden md:inline">Search</span>
+              <kbd className="hidden lg:inline-block px-1 py-0.2 rounded text-[10px] font-mono bg-white/5 border border-white/10 text-neutral-400">
                 ⌘K
               </kbd>
             </button>
 
-            {/* NIL Opportunity Notifications Bell */}
+            {/* Member-Only Header Utilities (Hidden from Public Tier 0 Guests) */}
+            {isApproved && (
+              <>
+                <button
+                  type="button"
+                  onClick={openNilAlerts}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono cursor-pointer"
+                  title="NIL Opportunity Radar"
+                >
+                  <Bell size={13} className="text-[#C89B3C]" />
+                  <span className="hidden 2xl:inline">NIL Radar</span>
+                  <span className="text-[10px] font-bold text-[#E8C98B]">
+                    {growthScenario === 'Aggressive' ? '4' : '3'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => openMemberNetwork(null)}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono cursor-pointer"
+                  title="Member Directory & Messaging"
+                >
+                  <MessageSquare size={13} className="text-[#C89B3C]" />
+                  <span className="hidden 2xl:inline">Network</span>
+                </button>
+              </>
+            )}
+
+            {/* Membership Auth / Status Trigger */}
             <button
-              onClick={() => setIsNilAlertsOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono group shadow-sm cursor-pointer"
-              title="Real-Time NIL Opportunity Radar & Trending Sponsorship Categories"
+              type="button"
+              onClick={() => setIsAccessGateModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-200 hover:text-white transition-all text-xs font-mono cursor-pointer"
             >
-              <div className="relative">
-                <Bell size={14} className="text-[#C89B3C] group-hover:scale-110 transition-transform" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#E8C98B] ring-2 ring-[#090A0C]"></span>
-              </div>
-              <span className="hidden xl:inline font-medium">NIL Radar</span>
-              <span className="bg-[#C89B3C] text-[#090A0C] text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
-                {growthScenario === 'Aggressive' ? '4' : '3'}
-              </span>
+              {isApproved ? (
+                <>
+                  <ShieldCheck size={14} className="text-[#68D391]" />
+                  <span className="hidden lg:inline truncate max-w-[100px]">{userProfile.displayName}</span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#C89B3C] text-[#090A0C]">
+                    T{userProfile.tier}
+                  </span>
+                </>
+              ) : userProfile.membershipStatus === 'pending' ? (
+                <>
+                  <Clock size={13} className="text-amber-400" />
+                  <span className="text-amber-300">Pending Review</span>
+                </>
+              ) : (
+                <>
+                  <Lock size={13} className="text-[#C89B3C]" />
+                  <span>Member Sign In</span>
+                </>
+              )}
             </button>
 
-            {/* Member Network & Messaging Trigger */}
             <button
-              onClick={() => { setSelectedDirectMessageUser(null); setIsNetworkModalOpen(true); }}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-sm bg-[#131722] hover:bg-[#1A2030] border border-white/10 hover:border-[#C89B3C]/50 text-neutral-300 hover:text-white transition-all text-xs font-mono group shadow-sm cursor-pointer"
-              title="Accredited Member Directory & Secure Messaging"
-            >
-              <div className="relative">
-                <MessageSquare size={14} className="text-[#C89B3C]" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#68D391] ring-2 ring-[#090A0C]"></span>
-              </div>
-              <span className="hidden sm:inline font-medium">Network</span>
-            </button>
-
-            <button
+              type="button"
               onClick={() => setIsInvestorModalOpen(true)}
-              className="px-3.5 sm:px-4 py-2 text-xs font-semibold tracking-wider uppercase text-[#090A0C] bg-[#C89B3C] hover:bg-[#D4AF37] rounded-sm transition-colors whitespace-nowrap shadow-sm cursor-pointer"
+              className="hidden sm:inline-flex px-3.5 py-2 text-xs font-semibold tracking-wider uppercase text-[#090A0C] bg-[#C89B3C] hover:bg-[#D4AF37] rounded-sm transition-colors whitespace-nowrap cursor-pointer"
             >
               Request Deck
             </button>
-            
-            <button 
+
+            <button
+              type="button"
               onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
               className="xl:hidden p-2 text-neutral-400 hover:text-white cursor-pointer"
               aria-label="Toggle Navigation"
@@ -1271,687 +1278,133 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* CONTEXTUAL SUB-NAVIGATION BAR (For deep sections with sub-pages, in portal mode) */}
-        {navMode === 'portal' && activeTab === 'holdings' && (
-          <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
-            <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-center gap-2 font-mono text-neutral-400">
-                <span className="text-[11px] uppercase tracking-wider text-[#C89B3C] font-semibold">Holdings Sub-Pages:</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  onClick={() => setHoldingsSubTab('directory')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all cursor-pointer ${
-                    holdingsSubTab === 'directory'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Asset Directory ({PORTFOLIO_DATA.length})
-                </button>
-                <button
-                  onClick={() => setHoldingsSubTab('map')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    holdingsSubTab === 'map'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <MapPin size={12} className={holdingsSubTab === 'map' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
-                  <span>National Campus Map (400+)</span>
-                </button>
-                <button
-                  onClick={() => setHoldingsSubTab('topology')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    holdingsSubTab === 'topology'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Layers size={12} className={holdingsSubTab === 'topology' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
-                  <span>Ecosystem Topology & Flow</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {navMode === 'portal' && activeTab === 'governance' && (
-          <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
-            <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-center gap-2 font-mono text-neutral-400">
-                <span className="text-[11px] uppercase tracking-wider text-[#C89B3C] font-semibold">Governance Sub-Pages:</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  onClick={() => setGovernanceSubTab('overview')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    governanceSubTab === 'overview'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Building2 size={12} />
-                  <span>Overview & Advisory</span>
-                </button>
-                <button
-                  onClick={() => setGovernanceSubTab('compliance-dashboard')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    governanceSubTab === 'compliance-dashboard'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <ShieldCheck size={12} />
-                  <span>Compliance Dashboard</span>
-                </button>
-                <button
-                  onClick={() => setGovernanceSubTab('repository')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    governanceSubTab === 'repository'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Scale size={12} />
-                  <span>Codified Rules Repository</span>
-                </button>
-                <button
-                  onClick={() => setGovernanceSubTab('risks')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    governanceSubTab === 'risks'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <ShieldCheck size={12} />
-                  <span>Institutional Risk Matrix</span>
-                </button>
-                <button
-                  onClick={() => setGovernanceSubTab('memo')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    governanceSubTab === 'memo'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <FileText size={12} />
-                  <span>Executive Memorandum</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {navMode === 'portal' && activeTab === 'editorial' && (
-          <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
-            <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-center gap-2 font-mono text-neutral-400">
-                <span className="text-[11px] uppercase tracking-wider text-[#C89B3C] font-semibold">Intelligence Sub-Pages:</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  onClick={() => setIntelligenceSubTab('editorial')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    intelligenceSubTab === 'editorial'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <BookOpen size={12} />
-                  <span>Thought Leadership & Articles</span>
-                </button>
-                <button
-                  onClick={() => setIntelligenceSubTab('market_wire')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    intelligenceSubTab === 'market_wire'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Radio size={12} className={intelligenceSubTab === 'market_wire' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
-                  <span>Live Market Intelligence Wire</span>
-                </button>
-                <button
-                  onClick={() => setIntelligenceSubTab('newsletter')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    intelligenceSubTab === 'newsletter'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Mail size={12} className={intelligenceSubTab === 'newsletter' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
-                  <span>Weekly Intelligence Briefing</span>
-                </button>
-                <button
-                  onClick={() => setIsRssModalOpen(true)}
-                  className="px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer text-[#E8C98B] hover:text-white hover:bg-white/5 border border-[#C89B3C]/30"
-                  title="Subscribe to market updates via RSS feed"
-                >
-                  <Rss size={12} className="text-[#C89B3C]" />
-                  <span>RSS Feed</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {navMode === 'portal' && activeTab === 'financials' && (
-          <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
-            <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-center gap-2 font-mono text-neutral-400">
-                <span className="text-[11px] uppercase tracking-wider text-[#C89B3C] font-semibold">Financial Sub-Pages:</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  onClick={() => setFinancialSubTab('simulator')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    financialSubTab === 'simulator'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <SlidersHorizontal size={12} className={financialSubTab === 'simulator' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
-                  <span>TAM & Yield Simulator</span>
-                </button>
-                <button
-                  onClick={() => setFinancialSubTab('nil_analytics')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    financialSubTab === 'nil_analytics'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <BarChart3 size={12} className={financialSubTab === 'nil_analytics' ? 'text-[#090A0C]' : 'text-[#68D391]'} />
-                  <span>NIL Analytics & Trends</span>
-                </button>
-                <button
-                  onClick={() => setFinancialSubTab('athlete_calculator')}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    financialSubTab === 'athlete_calculator'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <DollarSign size={12} className={financialSubTab === 'athlete_calculator' ? 'text-[#090A0C]' : 'text-[#38BDF8]'} />
-                  <span>Athlete NIL Calculator</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {navMode === 'portal' && activeTab === 'orchestrator' && (
-          <div className="bg-[#0D1017]/95 border-t border-b border-white/[0.06] backdrop-blur-md">
-            <div className="max-w-[1360px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-center gap-2 font-mono text-neutral-400">
-                <span className="text-[11px] uppercase tracking-wider text-[#C89B3C] font-semibold">Specialized Sub-Agents:</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  onClick={() => {
-                    setOrchestratorAgent('nil_compliance');
-                    setOrchestratorRole('athletic_director');
-                  }}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    orchestratorAgent === 'nil_compliance'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Scale size={12} className={orchestratorAgent === 'nil_compliance' ? 'text-[#090A0C]' : 'text-[#68D391]'} />
-                  <span>Agent-NIL Compliance</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setOrchestratorAgent('tournament_ops');
-                    setOrchestratorRole('athletic_director');
-                  }}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    orchestratorAgent === 'tournament_ops'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Cpu size={12} className={orchestratorAgent === 'tournament_ops' ? 'text-[#090A0C]' : 'text-[#38BDF8]'} />
-                  <span>Agent-Tournament Ops</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setOrchestratorAgent('media_fast');
-                    setOrchestratorRole('brand');
-                  }}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    orchestratorAgent === 'media_fast'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Tv size={12} className={orchestratorAgent === 'media_fast' ? 'text-[#090A0C]' : 'text-[#F6AD55]'} />
-                  <span>Agent-Broadcast FAST</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setOrchestratorAgent('fiduciary_ir');
-                    setOrchestratorRole('investor');
-                  }}
-                  className={`px-3 py-1 rounded-sm text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                    orchestratorAgent === 'fiduciary_ir'
-                      ? 'bg-[#C89B3C] text-[#090A0C] font-bold shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <TrendingUp size={12} className={orchestratorAgent === 'fiduciary_ir' ? 'text-[#090A0C]' : 'text-[#C89B3C]'} />
-                  <span>Agent-Capital IR</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Mobile Navigation Dropdown */}
         {isMobileNavOpen && (
-          <div className="xl:hidden bg-[#0D1016] border-b border-white/10 px-6 py-5 flex flex-col gap-4 text-xs tracking-wider uppercase max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <span className="font-mono text-[#C89B3C] text-[11px] font-bold">NAVIGATION MENU</span>
-              <button 
-                onClick={() => setIsMobileNavOpen(false)}
-                className="text-neutral-400 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Quick Action Buttons on Mobile */}
-            <div className="grid grid-cols-2 gap-2 pb-3 border-b border-white/10">
-              <button 
-                onClick={() => { setIsNilAlertsOpen(true); setIsMobileNavOpen(false); }}
-                className="p-2 rounded bg-[#131722] border border-white/10 text-[#E8C98B] flex items-center justify-between font-mono text-[11px]"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Bell size={13} className="text-[#C89B3C]" />
-                  <span>NIL Radar</span>
+          <div className="xl:hidden bg-[#0D1016] border-b border-white/10 px-6 py-5 flex flex-col gap-3 text-xs tracking-wider uppercase max-h-[82vh] overflow-y-auto">
+            {!isApproved ? (
+              <>
+                <button type="button" onClick={() => navigateTo('overview')} className="text-left py-2 text-sm font-semibold text-white">
+                  Overview
+                </button>
+                <button type="button" onClick={() => scrollToPublicSection('consumer-pillars')} className="text-left py-2 text-sm font-semibold text-neutral-300 border-t border-white/5">
+                  Four Operating Pillars
+                </button>
+                <button type="button" onClick={() => scrollToPublicSection('public-spotlight')} className="text-left py-2 text-sm font-semibold text-neutral-300 border-t border-white/5">
+                  Flagship Spotlight
+                </button>
+                <button type="button" onClick={() => scrollToPublicSection('membership-tiers')} className="text-left py-2 text-sm font-semibold text-neutral-300 border-t border-white/5">
+                  Membership & Protected Tools
+                </button>
+                <button type="button" onClick={() => navigateTo('editorial', 'editorial')} className="text-left py-2 text-sm font-semibold text-[#E8C98B] border-t border-white/5">
+                  Research Wire & Briefings
+                </button>
+                <div className="pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setIsAccessGateModalOpen(true); setIsMobileNavOpen(false); }}
+                    className="py-2.5 bg-[#161B26] border border-[#C89B3C]/40 text-[#E8C98B] font-bold text-center rounded-sm"
+                  >
+                    Sign In / Apply
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsInvestorModalOpen(true); setIsMobileNavOpen(false); }}
+                    className="py-2.5 bg-[#C89B3C] text-[#090A0C] font-bold text-center rounded-sm"
+                  >
+                    Request Deck
+                  </button>
                 </div>
-                <span className="bg-[#C89B3C] text-[#090A0C] text-[10px] font-bold px-1.5 rounded-full font-mono">
-                  {growthScenario === 'Aggressive' ? '4' : '3'}
-                </span>
-              </button>
-              <button 
-                onClick={() => { setIsNetworkModalOpen(true); setIsMobileNavOpen(false); }}
-                className="p-2 rounded bg-[#131722] border border-white/10 text-neutral-300 flex items-center gap-1.5 font-mono text-[11px]"
-              >
-                <MessageSquare size={13} className="text-[#68D391]" />
-                <span>Messages</span>
-              </button>
-            </div>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2 pb-3 border-b border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => { openNilAlerts(); setIsMobileNavOpen(false); }}
+                    className="p-2 rounded bg-[#131722] border border-white/10 text-[#E8C98B] flex items-center justify-between font-mono text-[11px]"
+                  >
+                    <span>NIL Radar</span>
+                    <span className="font-bold text-[#C89B3C]">{growthScenario === 'Aggressive' ? '4' : '3'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { openMemberNetwork(null); setIsMobileNavOpen(false); }}
+                    className="p-2 rounded bg-[#131722] border border-white/10 text-neutral-300 flex items-center gap-1.5 font-mono text-[11px]"
+                  >
+                    <MessageSquare size={13} className="text-[#68D391]" />
+                    <span>Network</span>
+                  </button>
+                </div>
 
-            {/* Main Section Links with Sub-page Indents */}
-            <div className="space-y-1">
-              <button 
-                onClick={() => { setActiveTab('overview'); setIsMobileNavOpen(false); }}
-                className={`w-full text-left py-2 font-semibold text-sm ${activeTab === 'overview' ? 'text-[#C89B3C]' : 'text-white'}`}
-              >
-                1. Investment Thesis & Overview
-              </button>
-            </div>
-
-            <div className="space-y-1 border-t border-white/5 pt-2">
-              <button 
-                onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('directory'); setIsMobileNavOpen(false); }}
-                className={`w-full text-left py-1.5 font-semibold text-sm flex items-center justify-between ${activeTab === 'holdings' ? 'text-[#C89B3C]' : 'text-white'}`}
-              >
-                <span>2. Holdings & Campuses</span>
-                <span className="text-[10px] font-mono text-neutral-500 font-normal">({PORTFOLIO_DATA.length})</span>
-              </button>
-              <div className="pl-4 space-y-1 text-neutral-400 font-mono text-[11px]">
-                <button 
-                  onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('directory'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Asset Directory ({PORTFOLIO_DATA.length} Brands)
+                <button type="button" onClick={() => navigateTo('overview')} className={`text-left py-2 font-semibold text-sm ${activeTab === 'overview' ? 'text-[#C89B3C]' : 'text-white'}`}>
+                  Overview
                 </button>
-                <button 
-                  onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('map'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ National Campus Map (400+ Footprint)
+                <button type="button" onClick={() => navigateTo('holdings', 'directory')} className={`text-left py-2 font-semibold text-sm border-t border-white/5 ${activeTab === 'holdings' ? 'text-[#C89B3C]' : 'text-white'}`}>
+                  Holdings & Campus Map ({PORTFOLIO_DATA.length})
                 </button>
-                <button 
-                  onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('topology'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Holding Ecosystem Topology & Flow
+                <button type="button" onClick={() => navigateTo('strategy', 'plan')} className={`text-left py-2 font-semibold text-sm border-t border-white/5 ${activeTab === 'strategy' ? 'text-[#C89B3C]' : 'text-white'}`}>
+                  Strategic Plan & NIL Calculator
                 </button>
-              </div>
-            </div>
-
-            <div className="space-y-1 border-t border-white/5 pt-2">
-              <button 
-                onClick={() => { setActiveTab('strategy'); setIsMobileNavOpen(false); }}
-                className={`w-full text-left py-1.5 font-semibold text-sm flex items-center justify-between ${activeTab === 'strategy' ? 'text-[#C89B3C]' : 'text-white'}`}
-              >
-                <span>3. Strategic Plan</span>
-                <span className="px-1.5 py-0.2 rounded bg-[#C89B3C]/15 border border-[#C89B3C]/30 text-[9px] font-mono text-[#E8C98B]">v1.0</span>
-              </button>
-            </div>
-
-            <div className="space-y-1 border-t border-white/5 pt-2">
-              <button 
-                onClick={() => { setActiveTab('financials'); setFinancialSubTab('simulator'); setIsMobileNavOpen(false); }}
-                className={`w-full text-left py-1.5 font-semibold text-sm ${activeTab === 'financials' ? 'text-[#C89B3C]' : 'text-white'}`}
-              >
-                4. Financial Model & NIL
-              </button>
-              <div className="pl-4 space-y-1 text-neutral-400 font-mono text-[11px]">
-                <button 
-                  onClick={() => { setActiveTab('financials'); setFinancialSubTab('simulator'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ TAM & Yield Simulator
+                <button type="button" onClick={() => navigateTo('governance', 'overview')} className={`text-left py-2 font-semibold text-sm border-t border-white/5 flex items-center justify-between ${activeTab === 'governance' ? 'text-[#C89B3C]' : 'text-white'}`}>
+                  <span>Governance & Compliance</span>
+                  {userProfile.tier < 2 && <Lock size={12} className="text-neutral-500" />}
                 </button>
-                <button 
-                  onClick={() => { setActiveTab('financials'); setFinancialSubTab('nil_analytics'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ NIL Analytics & Trends
+                <button type="button" onClick={() => navigateTo('financials', 'simulator')} className={`text-left py-2 font-semibold text-sm border-t border-white/5 flex items-center justify-between ${activeTab === 'financials' ? 'text-[#C89B3C]' : 'text-white'}`}>
+                  <span>Financials & Data Room</span>
+                  {userProfile.tier < 3 && <Lock size={12} className="text-neutral-500" />}
                 </button>
-                <button 
-                  onClick={() => { setActiveTab('financials'); setFinancialSubTab('athlete_calculator'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Athlete NIL Calculator
+                <button type="button" onClick={() => navigateTo('editorial', 'editorial')} className={`text-left py-2 font-semibold text-sm border-t border-white/5 ${activeTab === 'editorial' ? 'text-[#C89B3C]' : 'text-white'}`}>
+                  Research Wire
                 </button>
-              </div>
-            </div>
-
-            <div className="space-y-1 border-t border-white/5 pt-2">
-              <button 
-                onClick={() => { setActiveTab('governance'); setGovernanceSubTab('overview'); setIsMobileNavOpen(false); }}
-                className={`w-full text-left py-1.5 font-semibold text-sm ${activeTab === 'governance' ? 'text-[#C89B3C]' : 'text-white'}`}
-              >
-                5. Governance & Legal
-              </button>
-              <div className="pl-4 space-y-1 text-neutral-400 font-mono text-[11px]">
-                <button 
-                  onClick={() => { setActiveTab('governance'); setGovernanceSubTab('overview'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Overview & Advisory Board
+                <button type="button" onClick={() => navigateTo('orchestrator')} className={`text-left py-2 font-semibold text-sm border-t border-white/5 flex items-center justify-between ${activeTab === 'orchestrator' ? 'text-[#C89B3C]' : 'text-white'}`}>
+                  <span>AI Orchestration Mesh</span>
+                  {userProfile.tier < 3 && <Lock size={12} className="text-neutral-500" />}
                 </button>
-                <button 
-                  onClick={() => { setActiveTab('governance'); setGovernanceSubTab('compliance-dashboard'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Compliance Dashboard
-                </button>
-                <button 
-                  onClick={() => { setActiveTab('governance'); setGovernanceSubTab('repository'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Codified Rules Repository
-                </button>
-                <button 
-                  onClick={() => { setActiveTab('governance'); setGovernanceSubTab('risks'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Institutional Risk Factors
-                </button>
-                <button 
-                  onClick={() => { setActiveTab('governance'); setGovernanceSubTab('memo'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Executive Memorandum
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1 border-t border-white/5 pt-2">
-              <button 
-                onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('editorial'); setIsMobileNavOpen(false); }}
-                className={`w-full text-left py-1.5 font-semibold text-sm ${activeTab === 'editorial' ? 'text-[#C89B3C]' : 'text-white'}`}
-              >
-                6. Intelligence & News
-              </button>
-              <div className="pl-4 space-y-1 text-neutral-400 font-mono text-[11px]">
-                <button 
-                  onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('editorial'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Thought Leadership & Articles
-                </button>
-                <button 
-                  onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('market_wire'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Live Market Intelligence Wire
-                </button>
-                <button 
-                  onClick={() => { setActiveTab('editorial'); setIntelligenceSubTab('newsletter'); setIsMobileNavOpen(false); }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Weekly Newsletter Dispatch
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1 border-t border-white/5 pt-2">
-              <button 
-                onClick={() => { setActiveTab('orchestrator'); setIsMobileNavOpen(false); }}
-                className={`w-full text-left py-1.5 font-semibold text-sm flex items-center justify-between ${activeTab === 'orchestrator' ? 'text-[#C89B3C]' : 'text-white'}`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <BrainCircuit size={14} className="text-[#C89B3C]" />
-                  <span>7. AI Orchestration Mesh</span>
-                </span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#68D391]/20 text-[#68D391] border border-[#68D391]/30 font-mono">
-                  400+ Campuses
-                </span>
-              </button>
-              <div className="pl-4 space-y-1 text-neutral-400 font-mono text-[11px]">
-                <button 
-                  onClick={() => { 
-                    setActiveTab('orchestrator'); 
-                    setOrchestratorAgent('auto'); 
-                    setIsMobileNavOpen(false); 
-                  }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Multi-Agent Supervisor Console
-                </button>
-                <button 
-                  onClick={() => { 
-                    setActiveTab('orchestrator'); 
-                    setOrchestratorAgent('nil_compliance'); 
-                    setOrchestratorRole('athletic_director');
-                    setIsMobileNavOpen(false); 
-                  }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Agent-NIL · Legal Clearinghouse
-                </button>
-                <button 
-                  onClick={() => { 
-                    setActiveTab('orchestrator'); 
-                    setOrchestratorAgent('tournament_ops'); 
-                    setOrchestratorRole('athletic_director');
-                    setIsMobileNavOpen(false); 
-                  }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Agent-Tournament · Circuit Ops
-                </button>
-                <button 
-                  onClick={() => { 
-                    setActiveTab('orchestrator'); 
-                    setOrchestratorAgent('media_fast'); 
-                    setOrchestratorRole('brand');
-                    setIsMobileNavOpen(false); 
-                  }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Agent-Broadcast · FAST Connected TV
-                </button>
-                <button 
-                  onClick={() => { 
-                    setActiveTab('orchestrator'); 
-                    setOrchestratorAgent('fiduciary_ir'); 
-                    setOrchestratorRole('investor');
-                    setIsMobileNavOpen(false); 
-                  }}
-                  className="block py-1 hover:text-[#C89B3C]"
-                >
-                  ↳ Agent-Capital · Fiduciary IR & DCF
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-white/10">
-              <button
-                onClick={() => { setIsInvestorModalOpen(true); setIsMobileNavOpen(false); }}
-                className="w-full py-3 bg-[#C89B3C] text-[#090A0C] font-bold text-center rounded-sm uppercase tracking-wider"
-              >
-                Request Investor Deck
-              </button>
-            </div>
+              </>
+            )}
           </div>
         )}
       </header>
 
-      {/* Institutional Clearance & Evaluator Demo Strip */}
-      <div className="bg-[#0D1017] border-b border-white/[0.08] py-2 px-4 text-xs font-mono text-neutral-400 sticky top-[69px] z-30 backdrop-blur-md">
-        <div className="max-w-[1360px] mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[#C89B3C] font-semibold text-[11px] flex items-center gap-1.5">
-              <ShieldCheck size={14} />
-              <span>Membership:</span>
+      {/* Evaluator Demo Strip: Hidden in production unless ?demo=1 or cc_evaluator_mode=true */}
+      {evaluatorMode && (
+        <div className="bg-[#0D1017] border-b border-white/[0.08] py-1.5 px-4 text-xs font-mono text-neutral-400">
+          <div className="max-w-[1360px] mx-auto flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[#C89B3C] text-[11px]">
+              Evaluator Sandbox · Current: {userProfile.membershipStatus} (Tier {userProfile.tier})
             </span>
-            <span className="text-white font-medium">
-              {userProfile.membershipStatus === 'approved' ? (
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <span>Approved ({userProfile.displayName})</span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-bold">
-                    T{userProfile.tier}
-                  </span>
-                </span>
-              ) : userProfile.membershipStatus === 'pending' ? (
-                <span className="text-amber-400 flex items-center gap-1">
-                  <Clock size={12} className="animate-spin" />
-                  <span>Pending Directorate Review ({userProfile.displayName})</span>
-                </span>
-              ) : (
-                <span className="text-neutral-400">Public Guest (All Robust Tools Locked)</span>
-              )}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-neutral-500 uppercase tracking-wider hidden md:inline">
-              Simulate Role:
-            </span>
-            <div className="inline-flex items-center bg-[#131722] rounded p-0.5 border border-white/10 text-[10px]">
-              <button
-                type="button"
-                onClick={() => handleSelectTier(0, { membershipStatus: 'unregistered', displayName: 'Public Guest', organization: 'Prospective Partner' })}
-                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-                  userProfile.membershipStatus !== 'approved' && userProfile.membershipStatus !== 'pending'
-                    ? 'bg-white/15 text-white font-bold'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Public guest (Tools locked behind membership wall)"
-              >
-                Guest
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleSelectTier(0, {
-                    ...PENDING_DEMO_PROFILE,
-                    membershipStatus: 'pending'
-                  });
-                }}
-                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-                  userProfile.membershipStatus === 'pending'
-                    ? 'bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Application under review"
-              >
-                Pending
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectTier(1, { membershipStatus: 'approved' })}
-                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-                  userProfile.membershipStatus === 'approved' && userProfile.tier === 1
-                    ? 'bg-[#38BDF8]/25 text-[#38BDF8] font-bold border border-[#38BDF8]/40'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Tier 1: Campus & Brand Partner"
-              >
-                Tier 1
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectTier(2, { membershipStatus: 'approved' })}
-                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-                  userProfile.membershipStatus === 'approved' && userProfile.tier === 2
-                    ? 'bg-[#E8C98B]/25 text-[#E8C98B] font-bold border border-[#E8C98B]/40'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Tier 2: Athletic Director & Legal"
-              >
-                Tier 2
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectTier(3, { membershipStatus: 'approved' })}
-                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
-                  userProfile.membershipStatus === 'approved' && userProfile.tier === 3
-                    ? 'bg-[#68D391]/25 text-[#68D391] font-bold border border-[#68D391]/40'
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Tier 3: Executive Board & Fiduciary"
-              >
-                Tier 3
-              </button>
+            <div className="inline-flex items-center gap-1 text-[10px]">
+              <button type="button" onClick={() => handleSelectTier(0, { membershipStatus: 'unregistered', displayName: 'Public Guest', organization: 'Prospective Partner' })} className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-neutral-300 cursor-pointer">Guest</button>
+              <button type="button" onClick={() => handleSelectTier(0, { ...PENDING_DEMO_PROFILE, membershipStatus: 'pending' })} className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 cursor-pointer">Pending</button>
+              <button type="button" onClick={() => handleSelectTier(1, { membershipStatus: 'approved' })} className="px-2 py-0.5 rounded bg-[#38BDF8]/20 text-[#38BDF8] cursor-pointer">Tier 1</button>
+              <button type="button" onClick={() => handleSelectTier(2, { membershipStatus: 'approved' })} className="px-2 py-0.5 rounded bg-[#E8C98B]/20 text-[#E8C98B] cursor-pointer">Tier 2</button>
+              <button type="button" onClick={() => handleSelectTier(3, { membershipStatus: 'approved' })} className="px-2 py-0.5 rounded bg-[#68D391]/20 text-[#68D391] cursor-pointer">Tier 3</button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsAccessGateModalOpen(true)}
-              className="text-[#C89B3C] hover:text-[#E8C98B] text-[11px] underline ml-2 cursor-pointer font-semibold"
-            >
-              {userProfile.membershipStatus === 'approved' ? 'Clearance Console' : 'Apply / Status'}
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MAIN CONTENT ROUTING */}
       {/* ========================================================================= */}
       <main className="flex-grow overflow-x-hidden">
-        {navMode === 'consumer' && activeTab === 'overview' ? (
-          <ConsumerPublicView 
-            onOpenAccessModal={(targetToolId) => {
-              setSelectedToolForModal(targetToolId);
-              setIsAccessGateModalOpen(true);
+        {!isApproved && activeTab === 'overview' ? (
+          <ConsumerPublicView
+            onOpenAccessModal={(targetToolId) => openGateFor(targetToolId)}
+            onEnterPortal={(targetTab, actionModal, subTab) => {
+              if (actionModal === 'orchestrator') openOrchestratorModal();
+              else if (actionModal === 'nil-radar') openNilAlerts();
+              else if (actionModal === 'compliance-portal') openCompliancePortal();
+              else if (actionModal === 'financial-report') openFinancialReport();
+              else if (actionModal === 'network') openMemberNetwork(null);
+              else if (targetTab) {
+                navigateTo(targetTab as any, subTab);
+              }
             }}
-            onEnterPortal={(targetTab, actionModal) => {
-              if (targetTab) {
-                setActiveTab(targetTab as any);
-              }
-              if (actionModal) {
-                if (actionModal === 'orchestrator') setIsOrchestratorModalOpen(true);
-                else if (actionModal === 'nil-radar') setIsNilAlertsOpen(true);
-                else if (actionModal === 'compliance-portal') setIsCompliancePortalOpen(true);
-                else if (actionModal === 'financial-report') setIsFinancialReportModalOpen(true);
-                else if (actionModal === 'network') setIsNetworkModalOpen(true);
-              }
-              if (targetTab !== 'editorial') {
-                handleSwitchMode('portal');
-              }
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+            onOpenSearch={() => setIsCommandPaletteOpen(true)}
+            onSelectSpotlightBrand={(brandName) => {
+              const found = PORTFOLIO_DATA.find((b) => b.name === brandName);
+              if (found) openBrandDossier(found);
             }}
             currentProfile={userProfile}
             currentTier={userProfile.tier}
@@ -2013,29 +1466,13 @@ export const App: React.FC = () => {
                         Explore {PORTFOLIO_DATA.length} Strategic Holdings
                       </button>
 
-                      <div className="inline-flex items-center gap-2.5">
-                        <button
-                          onClick={() => { setActiveTab('strategy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                          className="group relative px-6 py-3.5 bg-[#C89B3C]/15 hover:bg-[#C89B3C]/25 border border-[#C89B3C]/40 hover:border-[#C89B3C] text-[#E8C98B] hover:text-[#FFF4D4] font-semibold text-xs uppercase tracking-wider rounded-sm transition-all duration-200 transform hover:scale-105 active:scale-95 hover:shadow-[0_0_20px_rgba(200,155,60,0.35)] flex items-center gap-2 cursor-pointer"
-                        >
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C89B3C] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C89B3C]"></span>
-                          </span>
-                          <Sparkles size={14} className="text-[#C89B3C] group-hover:rotate-12 transition-transform duration-300" />
-                          <span>Strategic Plan</span>
-                        </button>
-
-                        {/* Status Indicator Badge */}
-                        <div 
-                          onClick={() => { setActiveTab('strategy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                          title="Roadmap Authority: v1.0 Active Commercial Mandate"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm border border-[#C89B3C]/30 bg-[#121620]/90 hover:bg-[#181D2A] hover:border-[#C89B3C]/60 text-[#E8C98B] font-mono text-[10.5px] uppercase tracking-wider font-medium cursor-pointer transition-all shadow-xs select-none"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse"></span>
-                          <span>v1.0 · Active</span>
-                        </div>
-                      </div>
+                      <button
+                        onClick={() => navigateTo('strategy', 'plan')}
+                        className="px-6 py-3.5 bg-[#C89B3C]/15 hover:bg-[#C89B3C]/25 border border-[#C89B3C]/40 hover:border-[#C89B3C] text-[#E8C98B] hover:text-[#FFF4D4] font-semibold text-xs uppercase tracking-wider rounded-sm transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <Sparkles size={14} className="text-[#C89B3C]" />
+                        <span>Strategic Plan (v1.0)</span>
+                      </button>
                     </div>
 
                     {/* Institutional Trust Markers */}
@@ -2165,14 +1602,14 @@ export const App: React.FC = () => {
                             </p>
                             <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px]">
                               <button 
-                                onClick={() => setIsNilAlertsOpen(true)}
+                                onClick={openNilAlerts}
                                 className="px-3 py-1.5 bg-[#1A2030] hover:bg-[#222A40] text-[#E8C98B] border border-[#C89B3C]/30 rounded-sm cursor-pointer flex items-center gap-1.5 transition-colors"
                               >
                                 <Radio size={11} className="text-[#C89B3C]" />
                                 <span>Inspect NIL Opportunity Radar →</span>
                               </button>
                               <button 
-                                onClick={() => { setActiveTab('holdings'); setSelectedDivision('Media & Broadcast'); setHoldingsSubTab('directory'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                onClick={() => { setSelectedDivision('Media & Broadcast'); navigateTo('holdings', 'directory'); }}
                                 className="px-3 py-1.5 bg-[#1A2030] hover:bg-[#222A40] text-neutral-200 border border-white/10 rounded-sm cursor-pointer flex items-center gap-1.5 transition-colors"
                               >
                                 <Tv size={11} className="text-neutral-400" />
@@ -2196,7 +1633,7 @@ export const App: React.FC = () => {
                             </p>
                             <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px]">
                               <button 
-                                onClick={() => { setActiveTab('financials'); setFinancialSubTab('simulator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                onClick={() => navigateTo('financials', 'simulator')}
                                 className="px-3 py-1.5 bg-[#1A2030] hover:bg-[#222A40] text-[#E8C98B] border border-[#C89B3C]/30 rounded-sm cursor-pointer flex items-center gap-1.5 transition-colors"
                               >
                                 <SlidersHorizontal size={11} className="text-[#C89B3C]" />
@@ -2227,14 +1664,14 @@ export const App: React.FC = () => {
                             </p>
                             <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px]">
                               <button 
-                                onClick={() => { setActiveTab('financials'); setFinancialSubTab('athlete_calculator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                onClick={() => navigateTo('strategy', 'nil_calculator')}
                                 className="px-3 py-1.5 bg-[#1A2030] hover:bg-[#222A40] text-[#E8C98B] border border-[#C89B3C]/30 rounded-sm cursor-pointer flex items-center gap-1.5 transition-colors"
                               >
                                 <DollarSign size={11} className="text-[#68D391]" />
                                 <span>Calculate Individual NIL Valuation →</span>
                               </button>
                               <button 
-                                onClick={() => { setActiveTab('governance'); setGovernanceSubTab('repository'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                onClick={() => navigateTo('governance', 'repository')}
                                 className="px-3 py-1.5 bg-[#1A2030] hover:bg-[#222A40] text-neutral-200 border border-white/10 rounded-sm cursor-pointer flex items-center gap-1.5 transition-colors"
                               >
                                 <ShieldCheck size={11} className="text-[#C89B3C]" />
@@ -2875,9 +2312,7 @@ export const App: React.FC = () => {
                         <span>Open AI Orchestrator</span>
                       </button>
                       <button
-                        onClick={() => {
-                          setIsOrchestratorModalOpen(true);
-                        }}
+                        onClick={() => openOrchestratorModal()}
                         className="px-4 py-2.5 bg-[#141824] hover:bg-[#1C2234] text-neutral-300 hover:text-white border border-white/10 font-mono text-xs rounded-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <span>Launch Quick Copilot</span>
@@ -2900,7 +2335,7 @@ export const App: React.FC = () => {
               <div className="max-w-[1360px] mx-auto px-6">
                 <InvestorStrategyFaq 
                   onRequestMemorandum={() => setIsInvestorModalOpen(true)}
-                  onOpenMemo={() => setIsMemoOpen(true)}
+                  onOpenMemo={openExecutiveMemo}
                 />
               </div>
             </section>
@@ -2934,7 +2369,7 @@ export const App: React.FC = () => {
                       Request Series A Confidential Memorandum
                     </button>
                     <button
-                      onClick={() => setIsMemoOpen(true)}
+                      onClick={openExecutiveMemo}
                       className="px-7 py-3.5 bg-[#171B24] hover:bg-[#202532] border border-white/15 text-white font-medium text-xs uppercase tracking-wider rounded-sm transition-all"
                     >
                       Read Executive Thesis Brief
@@ -2952,18 +2387,15 @@ export const App: React.FC = () => {
         {/* VIEW 2: HOLDINGS DIRECTORY ({PORTFOLIO_DATA.length} Strategic Entities) */}
         {/* ========================================================================= */}
         {activeTab === 'holdings' && (
-          (userProfile.membershipStatus !== 'approved' || userProfile.tier < 1) ? (
+          !hasAccess(1) ? (
             <TierGateBanner
               requiredTier={1}
               currentTier={userProfile.tier}
               membershipStatus={userProfile.membershipStatus}
               applicantName={userProfile.displayName}
               sectionName="Proprietary Holdings Directory & 400+ Campus Impact Map"
-              onOpenAccessModal={() => {
-                setSelectedToolForModal('holding-directory-map');
-                setIsAccessGateModalOpen(true);
-              }}
-              onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+              onOpenAccessModal={() => openGateFor('holding-directory-map')}
+              onQuickElevate={evaluatorMode ? (t) => handleSelectTier(t, { membershipStatus: 'approved' }) : undefined}
             />
           ) : (
           <motion.div
@@ -3324,21 +2756,18 @@ export const App: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW: STRATEGIC PLAN & COMMERCIAL ENGINE (Strategy v1.0) */}
+      {/* VIEW: STRATEGIC PLAN & ATHLETE NIL CALCULATOR (Tier 1+) */}
       {/* ========================================================================= */}
       {activeTab === 'strategy' && (
-        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 1) ? (
+        !hasAccess(1) ? (
           <TierGateBanner
             requiredTier={1}
             currentTier={userProfile.tier}
             membershipStatus={userProfile.membershipStatus}
             applicantName={userProfile.displayName}
             sectionName="Strategic Commercialization Plan & NIL Calculator"
-            onOpenAccessModal={() => {
-              setSelectedToolForModal('student-nil-calc');
-              setIsAccessGateModalOpen(true);
-            }}
-            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+            onOpenAccessModal={() => openGateFor('student-nil-calc')}
+            onQuickElevate={evaluatorMode ? (t) => handleSelectTier(t, { membershipStatus: 'approved' }) : undefined}
           />
         ) : (
         <motion.div
@@ -3348,9 +2777,53 @@ export const App: React.FC = () => {
           exit={{ opacity: 0, y: -16 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
         >
-          <section className="py-14 md:py-20 bg-[#090A0C]">
-            <div className="max-w-[1360px] mx-auto px-6">
-              <StrategicCommercializationPlan />
+          <section className="py-12 md:py-16 bg-[#090A0C]">
+            <div className="max-w-[1360px] mx-auto px-6 space-y-8">
+              {/* Inline Strategy & NIL Sub-Tabs (No sticky bar bloat) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-5">
+                <div>
+                  <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-widest">
+                    Tier 1 Member Workspace
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight mt-1">
+                    {strategySubTab === 'nil_calculator'
+                      ? 'Student-Athlete NIL Valuation & Escrow Calculator'
+                      : 'Strategic Commercialization Plan (v1.0)'}
+                  </h1>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setStrategySubTab('plan')}
+                    className={`px-3.5 py-2 rounded-sm uppercase tracking-wider font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      strategySubTab === 'plan'
+                        ? 'bg-[#C89B3C] text-[#090A0C]'
+                        : 'bg-[#121622] hover:bg-[#1A2030] text-neutral-300 border border-white/5'
+                    }`}
+                  >
+                    <Layers size={13} />
+                    <span>Commercialization Plan</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStrategySubTab('nil_calculator')}
+                    className={`px-3.5 py-2 rounded-sm uppercase tracking-wider font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      strategySubTab === 'nil_calculator'
+                        ? 'bg-[#C89B3C] text-[#090A0C]'
+                        : 'bg-[#121622] hover:bg-[#1A2030] text-neutral-300 border border-white/5'
+                    }`}
+                  >
+                    <DollarSign size={13} />
+                    <span>Athlete NIL Calculator</span>
+                  </button>
+                </div>
+              </div>
+
+              {strategySubTab === 'nil_calculator' ? (
+                <StudentAthleteNilCalculator onInspectOpportunities={openNilAlerts} />
+              ) : (
+                <StrategicCommercializationPlan />
+              )}
             </div>
           </section>
         </motion.div>
@@ -3361,18 +2834,15 @@ export const App: React.FC = () => {
       {/* VIEW 3: INTERACTIVE FINANCIAL MODEL & TAM SIMULATOR */}
       {/* ========================================================================= */}
       {activeTab === 'financials' && (
-        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 3) ? (
+        !hasAccess(3) ? (
           <TierGateBanner
             requiredTier={3}
             currentTier={userProfile.tier}
             membershipStatus={userProfile.membershipStatus}
             applicantName={userProfile.displayName}
             sectionName="DCF Financial Modeling & Fiduciary Data Room"
-            onOpenAccessModal={() => {
-              setSelectedToolForModal('dcf-financial-modeler');
-              setIsAccessGateModalOpen(true);
-            }}
-            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+            onOpenAccessModal={() => openGateFor('dcf-financial-modeler')}
+            onQuickElevate={evaluatorMode ? (t) => handleSelectTier(t, { membershipStatus: 'approved' }) : undefined}
           />
         ) : (
         <motion.div
@@ -3465,10 +2935,10 @@ export const App: React.FC = () => {
               </div>
 
               {financialSubTab === 'athlete_calculator' ? (
-                <StudentAthleteNilCalculator onInspectOpportunities={() => setIsNilAlertsOpen(true)} />
+                <StudentAthleteNilCalculator onInspectOpportunities={openNilAlerts} />
               ) : financialSubTab === 'nil_analytics' ? (
                 <NilAnalyticsSubView 
-                  onInspectRadar={() => setIsNilAlertsOpen(true)} 
+                  onInspectRadar={openNilAlerts} 
                   onOpenCalculator={() => setFinancialSubTab('athlete_calculator')}
                 />
               ) : (
@@ -3737,18 +3207,15 @@ export const App: React.FC = () => {
       {/* VIEW 4: INSTITUTIONAL GOVERNANCE & COMPLIANCE */}
       {/* ========================================================================= */}
       {activeTab === 'governance' && (
-        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 2) ? (
+        !hasAccess(2) ? (
           <TierGateBanner
             requiredTier={2}
             currentTier={userProfile.tier}
             membershipStatus={userProfile.membershipStatus}
             applicantName={userProfile.displayName}
             sectionName="House v. NCAA Governance & Regulatory Repository"
-            onOpenAccessModal={() => {
-              setSelectedToolForModal('regulatory-audit-table');
-              setIsAccessGateModalOpen(true);
-            }}
-            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+            onOpenAccessModal={() => openGateFor('regulatory-audit-table')}
+            onQuickElevate={evaluatorMode ? (t) => handleSelectTier(t, { membershipStatus: 'approved' }) : undefined}
           />
         ) : (
         <motion.div
@@ -3879,7 +3346,7 @@ export const App: React.FC = () => {
                         while fulfilling state-specific NIL disclosure mandates.
                       </p>
                       <button
-                        onClick={() => { setSelectedDirectMessageUser('sarah_jenkins'); setIsNetworkModalOpen(true); }}
+                        onClick={() => openMemberNetwork('sarah_jenkins')}
                         className="inline-flex items-center gap-1.5 text-xs font-mono text-[#E8C98B] hover:text-white pt-1 transition-colors cursor-pointer"
                       >
                         <MessageSquare size={12} />
@@ -3897,7 +3364,7 @@ export const App: React.FC = () => {
                         long-term harmony between collegiate mission and commercial sustainability.
                       </p>
                       <button
-                        onClick={() => { setSelectedDirectMessageUser('elena_rostova'); setIsNetworkModalOpen(true); }}
+                        onClick={() => openMemberNetwork('elena_rostova')}
                         className="inline-flex items-center gap-1.5 text-xs font-mono text-[#E8C98B] hover:text-white pt-1 transition-colors cursor-pointer"
                       >
                         <MessageSquare size={12} />
@@ -4079,8 +3546,8 @@ export const App: React.FC = () => {
                 </button>
 
                 <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#68D391] animate-pulse"></span>
-                  <span>Separate Research & Market Wire Engine</span>
+                  <Radio size={12} className="text-[#68D391]" />
+                  <span>Dedicated Research & Market Wire</span>
                 </div>
               </div>
 
@@ -4177,18 +3644,15 @@ export const App: React.FC = () => {
       {/* VIEW 6: CONVERSATIONAL AI ORCHESTRATION MESH & MULTI-AGENT CORE */}
       {/* ========================================================================= */}
       {activeTab === 'orchestrator' && (
-        (userProfile.membershipStatus !== 'approved' || userProfile.tier < 3) ? (
+        !hasAccess(3) ? (
           <TierGateBanner
             requiredTier={3}
             currentTier={userProfile.tier}
             membershipStatus={userProfile.membershipStatus}
             applicantName={userProfile.displayName}
             sectionName="Multi-Agent AI Fiduciary & Governance Orchestrator"
-            onOpenAccessModal={() => {
-              setSelectedToolForModal('ai-orchestrator');
-              setIsAccessGateModalOpen(true);
-            }}
-            onQuickElevate={(t) => handleSelectTier(t, { membershipStatus: 'approved' })}
+            onOpenAccessModal={() => openGateFor('ai-orchestrator')}
+            onQuickElevate={evaluatorMode ? (t) => handleSelectTier(t, { membershipStatus: 'approved' }) : undefined}
           />
         ) : (
         <motion.div
@@ -4212,7 +3676,7 @@ export const App: React.FC = () => {
                   </h1>
                 </div>
                 <div className="flex items-center gap-2 font-mono text-xs text-neutral-400">
-                  <span className="w-2 h-2 rounded-full bg-[#68D391] animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-[#68D391]" />
                   <span>Serving 400+ Universities, Circuits & Broadcasts</span>
                 </div>
               </div>
@@ -4222,23 +3686,7 @@ export const App: React.FC = () => {
                 initialRole={orchestratorRole}
                 initialAgent={orchestratorAgent}
                 defaultPrompt={orchestratorPrompt}
-                onNavigateToTab={(tab, subTab) => {
-                  if (tab === 'governance') {
-                    setActiveTab('governance');
-                    if (subTab) setGovernanceSubTab(subTab as any);
-                  } else if (tab === 'financials') {
-                    setActiveTab('financials');
-                    if (subTab) setFinancialSubTab(subTab as any);
-                  } else if (tab === 'strategy') {
-                    setActiveTab('strategy');
-                  } else if (tab === 'holdings') {
-                    setActiveTab('holdings');
-                    if (subTab) setHoldingsSubTab(subTab as any);
-                  } else if (tab === 'editorial') {
-                    setActiveTab('editorial');
-                  }
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
+                onNavigateToTab={(tab, subTab) => navigateTo(tab as any, subTab)}
               />
             </div>
           </section>
@@ -4273,25 +3721,25 @@ export const App: React.FC = () => {
             <div className="md:col-span-3 space-y-3">
               <div className="text-xs font-mono uppercase tracking-wider text-[#C89B3C]">Divisions</div>
               <ul className="space-y-2 text-xs text-neutral-400">
-                <li><button onClick={() => { setSelectedDivision('Competitive Leagues'); setActiveTab('holdings'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Competitive Leagues & Circuits</button></li>
-                <li><button onClick={() => { setSelectedDivision('NIL & Creator Capital'); setActiveTab('holdings'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">NIL & Creator Economy</button></li>
-                <li><button onClick={() => { setSelectedDivision('Media & Broadcast'); setActiveTab('holdings'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Broadcast & Media Networks</button></li>
-                <li><button onClick={() => { setSelectedDivision('Campus Infrastructure'); setActiveTab('holdings'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Campus Infrastructure & Health</button></li>
+                <li><button type="button" onClick={() => { setSelectedDivision('Competitive Leagues'); navigateTo('holdings', 'directory'); }} className="hover:text-white transition-colors cursor-pointer">Competitive Leagues & Circuits</button></li>
+                <li><button type="button" onClick={() => { setSelectedDivision('NIL & Creator Capital'); navigateTo('holdings', 'directory'); }} className="hover:text-white transition-colors cursor-pointer">NIL & Creator Economy</button></li>
+                <li><button type="button" onClick={() => { setSelectedDivision('Media & Broadcast'); navigateTo('holdings', 'directory'); }} className="hover:text-white transition-colors cursor-pointer">Broadcast & Media Networks</button></li>
+                <li><button type="button" onClick={() => { setSelectedDivision('Campus Infrastructure'); navigateTo('holdings', 'directory'); }} className="hover:text-white transition-colors cursor-pointer">Campus Infrastructure & Health</button></li>
               </ul>
             </div>
 
             {/* Col 3: Institutional Links */}
             <div className="md:col-span-2 space-y-3">
-              <div className="text-xs font-mono uppercase tracking-wider text-[#C89B3C]">Investor Relations</div>
+              <div className="text-xs font-mono uppercase tracking-wider text-[#C89B3C]">Member & IR</div>
               <ul className="space-y-2 text-xs text-neutral-400">
-                <li><button onClick={() => setIsInvestorModalOpen(true)} className="hover:text-white transition-colors">Prospectus Access</button></li>
-                <li><button onClick={() => setIsMemoOpen(true)} className="hover:text-white transition-colors">Executive Memo</button></li>
-                <li><button onClick={() => { setActiveTab('financials'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Financial Model</button></li>
-                <li><button onClick={() => { setActiveTab('governance'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Athletic Compliance</button></li>
-                <li><button onClick={() => { setActiveTab('editorial'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Editorial & Articles</button></li>
-                <li><button onClick={() => { setActiveTab('governance'); setGovernanceSubTab('compliance-dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition-colors">Compliance Dashboard</button></li>
-                <li><button onClick={() => setIsCompliancePortalOpen(true)} className="hover:text-white transition-colors">Rules & Compliance Repository</button></li>
-                <li><button onClick={() => { setActiveTab('orchestrator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[#C89B3C] hover:text-[#E8C98B] transition-colors flex items-center gap-1 font-mono text-[11px]"><BrainCircuit size={11} /> AI Orchestration Mesh</button></li>
+                <li><button type="button" onClick={() => setIsInvestorModalOpen(true)} className="hover:text-white transition-colors cursor-pointer">Prospectus Inquiry</button></li>
+                <li><button type="button" onClick={() => setIsAccessGateModalOpen(true)} className="hover:text-white transition-colors cursor-pointer">Membership & Sign In</button></li>
+                <li><button type="button" onClick={openExecutiveMemo} className="hover:text-white transition-colors cursor-pointer">Executive Memo (Tier 2)</button></li>
+                <li><button type="button" onClick={() => navigateTo('financials', 'simulator')} className="hover:text-white transition-colors cursor-pointer">Financial Model (Tier 3)</button></li>
+                <li><button type="button" onClick={() => navigateTo('governance', 'compliance-dashboard')} className="hover:text-white transition-colors cursor-pointer">Compliance Dashboard (Tier 2)</button></li>
+                <li><button type="button" onClick={openCompliancePortal} className="hover:text-white transition-colors cursor-pointer">Rules Repository (Tier 2)</button></li>
+                <li><button type="button" onClick={() => navigateTo('editorial', 'editorial')} className="hover:text-white transition-colors cursor-pointer">Research Wire</button></li>
+                <li><button type="button" onClick={() => navigateTo('orchestrator')} className="text-[#C89B3C] hover:text-[#E8C98B] transition-colors flex items-center gap-1 font-mono text-[11px] cursor-pointer"><BrainCircuit size={11} /> AI Orchestrator (Tier 3)</button></li>
               </ul>
             </div>
 
@@ -4307,7 +3755,7 @@ export const App: React.FC = () => {
 
           </div>
 
-          {/* Bottom Legal & Admin Access */}
+          {/* Bottom Legal */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
             <div>
               &copy; {new Date().getFullYear()} College Company Holding Group Inc. All rights reserved. 
@@ -4316,36 +3764,30 @@ export const App: React.FC = () => {
             
             <div className="flex items-center gap-6">
               <button 
+                type="button"
                 onClick={() => setLegalModalType('confidentiality')} 
                 className="hover:text-neutral-400 cursor-pointer text-xs text-neutral-500 transition-colors"
               >
                 Confidentiality Policy
               </button>
               <button 
+                type="button"
                 onClick={() => setLegalModalType('regulatory')} 
                 className="hover:text-neutral-400 cursor-pointer text-xs text-neutral-500 transition-colors"
               >
                 Regulatory Disclosures
               </button>
 
-              <a
-                href="/downloads/hostinger-deploy-public_html.zip"
-                download="hostinger-deploy-public_html.zip"
-                className="hover:text-[#E8C98B] cursor-pointer text-xs text-[#C89B3C] flex items-center gap-1 transition-colors font-mono"
-                title="Download verified production bundle for Hostinger public_html"
-              >
-                <Download size={13} />
-                <span>Export for Hosting (.zip)</span>
-              </a>
-              
-              {/* Discrete Admin Carousel Trigger */}
-              <button
-                onClick={() => setIsAdminOpen(true)}
-                className="text-neutral-600 hover:text-[#C89B3C] transition-colors p-1"
-                title="Visual Media Console"
-              >
-                <Settings size={14} />
-              </button>
+              {hasAccess(3) && (
+                <button
+                  type="button"
+                  onClick={() => setIsAdminOpen(true)}
+                  className="text-neutral-500 hover:text-[#C89B3C] transition-colors p-1 cursor-pointer"
+                  title="Visual Media Console"
+                >
+                  <Settings size={14} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -4555,10 +3997,15 @@ export const App: React.FC = () => {
                   </p>
                   <div className="pt-4">
                     <button
-                      onClick={() => { setFormSubmitted(false); setIsInvestorModalOpen(false); setIsMemoOpen(true); }}
-                      className="px-6 py-2.5 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-semibold text-xs uppercase tracking-wider rounded-sm transition-colors"
+                      onClick={() => {
+                        setFormSubmitted(false);
+                        setIsInvestorModalOpen(false);
+                        if (hasAccess(2)) setIsMemoOpen(true);
+                        else openGateFor('regulatory-audit-table');
+                      }}
+                      className="px-6 py-2.5 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-semibold text-xs uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
                     >
-                      Read Executive Summary Now
+                      {hasAccess(2) ? 'Read Executive Summary Now' : 'Apply for Membership Clearance'}
                     </button>
                   </div>
                 </div>
@@ -4664,7 +4111,7 @@ export const App: React.FC = () => {
       {/* ========================================================================= */}
       {/* 8. MODAL: EXECUTIVE SUMMARY MEMORANDUM */}
       {/* ========================================================================= */}
-      {isMemoOpen && (
+      {isMemoOpen && hasAccess(2) && (
         <div 
           onClick={() => setIsMemoOpen(false)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-150"
@@ -4752,57 +4199,67 @@ export const App: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 9. ADMIN PANEL (Media & Carousel Manager) */}
+      {/* 9. ADMIN PANEL (Media & Carousel Manager — Tier 3 Executive Only) */}
       {/* ========================================================================= */}
-      <AdminPanel
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        images={heroImages}
-        setImages={setHeroImages}
-      />
+      {hasAccess(3) && (
+        <AdminPanel
+          isOpen={isAdminOpen}
+          onClose={() => setIsAdminOpen(false)}
+          images={heroImages}
+          setImages={setHeroImages}
+        />
+      )}
 
       {/* ========================================================================= */}
-      {/* 10. INSTITUTIONAL SYNDICATE NETWORK & MESSAGING PORTAL */}
+      {/* 10. INSTITUTIONAL SYNDICATE NETWORK & MESSAGING PORTAL (Tier 1+) */}
       {/* ========================================================================= */}
-      <MemberProfileAndMessaging
-        isOpen={isNetworkModalOpen}
-        onClose={() => {
-          setIsNetworkModalOpen(false);
-          setSelectedDirectMessageUser(null);
-        }}
-        defaultRecipientId={selectedDirectMessageUser}
-      />
+      {hasAccess(1) && (
+        <MemberProfileAndMessaging
+          isOpen={isNetworkModalOpen}
+          onClose={() => {
+            setIsNetworkModalOpen(false);
+            setSelectedDirectMessageUser(null);
+          }}
+          defaultRecipientId={selectedDirectMessageUser}
+        />
+      )}
 
       {/* ========================================================================= */}
-      {/* 11. RULES & COMPLIANCE REPOSITORY PORTAL (MODAL) */}
+      {/* 11. RULES & COMPLIANCE REPOSITORY PORTAL (MODAL — Tier 2+) */}
       {/* ========================================================================= */}
-      <ComplianceRepositoryPortal
-        isOpen={isCompliancePortalOpen}
-        onClose={() => setIsCompliancePortalOpen(false)}
-      />
+      {hasAccess(2) && (
+        <ComplianceRepositoryPortal
+          isOpen={isCompliancePortalOpen}
+          onClose={() => setIsCompliancePortalOpen(false)}
+        />
+      )}
 
       {/* ========================================================================= */}
-      {/* 12. PRO-FORMA FINANCIAL & TAM REPORT GENERATOR MODAL */}
+      {/* 12. PRO-FORMA FINANCIAL & TAM REPORT GENERATOR MODAL (Tier 3) */}
       {/* ========================================================================= */}
-      <FinancialReportModal
-        isOpen={isFinancialReportModalOpen}
-        onClose={() => setIsFinancialReportModalOpen(false)}
-        inputs={{
-          campusCount,
-          avgNilDeal,
-          mediaRightsTier,
-          growthScenario
-        }}
-      />
+      {hasAccess(3) && (
+        <FinancialReportModal
+          isOpen={isFinancialReportModalOpen}
+          onClose={() => setIsFinancialReportModalOpen(false)}
+          inputs={{
+            campusCount,
+            avgNilDeal,
+            mediaRightsTier,
+            growthScenario
+          }}
+        />
+      )}
 
       {/* ========================================================================= */}
-      {/* 13. NIL OPPORTUNITY NOTIFICATIONS & MARKET MONITOR MODAL */}
+      {/* 13. NIL OPPORTUNITY NOTIFICATIONS & MARKET MONITOR MODAL (Tier 1+) */}
       {/* ========================================================================= */}
-      <NilOpportunityModal
-        growthScenario={growthScenario}
-        isOpen={isNilAlertsOpen}
-        onClose={() => setIsNilAlertsOpen(false)}
-      />
+      {hasAccess(1) && (
+        <NilOpportunityModal
+          growthScenario={growthScenario}
+          isOpen={isNilAlertsOpen}
+          onClose={() => setIsNilAlertsOpen(false)}
+        />
+      )}
 
       {/* ========================================================================= */}
       {/* 14. INSTITUTIONAL LEGAL & REGULATORY DISCLOSURES MODAL */}
@@ -4813,51 +4270,25 @@ export const App: React.FC = () => {
       />
 
       {/* ========================================================================= */}
-      {/* 15. INSTITUTIONAL COMMAND PALETTE & OMNI-SEARCH (⌘K) */}
+      {/* 15. INSTITUTIONAL COMMAND PALETTE & OMNI-SEARCH (⌘K) — GATE-AWARE */}
       {/* ========================================================================= */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         portfolioData={PORTFOLIO_DATA}
-        onSelectBrand={(brand) => {
-          setSelectedBrand(brand);
-        }}
-        onNavigate={(tab, subTab) => {
-          setActiveTab(tab as any);
-          if (tab === 'holdings' && subTab) {
-            setHoldingsSubTab(subTab as any);
-          } else if (tab === 'financials' && subTab) {
-            setFinancialSubTab(subTab as any);
-          } else if (tab === 'governance' && subTab) {
-            setGovernanceSubTab(subTab as any);
-          } else if (tab === 'editorial' && subTab) {
-            setIntelligenceSubTab(subTab as any);
-          } else if (tab === 'orchestrator') {
-            if (subTab === 'nil') {
-              setOrchestratorAgent('nil_compliance');
-              setOrchestratorRole('athletic_director');
-            } else if (subTab === 'tournament') {
-              setOrchestratorAgent('tournament_ops');
-              setOrchestratorRole('athletic_director');
-            } else if (subTab === 'broadcast') {
-              setOrchestratorAgent('media_fast');
-              setOrchestratorRole('brand');
-            } else if (subTab === 'capital') {
-              setOrchestratorAgent('fiduciary_ir');
-              setOrchestratorRole('investor');
-            }
-          }
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        userProfile={userProfile}
+        onSelectBrand={(brand) => openBrandDossier(brand)}
+        onNavigate={(tab, subTab) => navigateTo(tab, subTab)}
         onOpenModal={(modal) => {
           if (modal === 'prospectus') setIsInvestorModalOpen(true);
-          else if (modal === 'memo') setIsMemoOpen(true);
-          else if (modal === 'nil_alerts') setIsNilAlertsOpen(true);
-          else if (modal === 'network') setIsNetworkModalOpen(true);
-          else if (modal === 'compliance') setIsCompliancePortalOpen(true);
-          else if (modal === 'orchestrator') setIsOrchestratorModalOpen(true);
+          else if (modal === 'memo') openExecutiveMemo();
+          else if (modal === 'nil_alerts') openNilAlerts();
+          else if (modal === 'network') openMemberNetwork(null);
+          else if (modal === 'compliance') openCompliancePortal();
+          else if (modal === 'orchestrator') openOrchestratorModal();
           else if (modal === 'rss') setIsRssModalOpen(true);
         }}
+        onRequestAccess={(toolId) => openGateFor(toolId)}
       />
 
       {/* ========================================================================= */}
@@ -4869,40 +4300,33 @@ export const App: React.FC = () => {
       />
 
       {/* ========================================================================= */}
-      {/* 16. PERSISTENT FLOATING QUICK COPILOT LAUNCHER BUTTON */}
+      {/* 16. FLOATING QUICK COPILOT LAUNCHER (Tier 3 Approved Members Only) */}
       {/* ========================================================================= */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <button
-          onClick={() => {
-            setOrchestratorPrompt('');
-            setIsOrchestratorModalOpen(true);
-          }}
-          className="group px-4 py-2.5 rounded-full bg-[#101420] hover:bg-[#161D30] border border-[#C89B3C]/50 hover:border-[#C89B3C] text-white shadow-[0_8px_30px_rgba(0,0,0,0.7)] flex items-center gap-2.5 transition-all hover:scale-105 cursor-pointer backdrop-blur-md"
-          title="Open Sovereign AI Orchestration Mesh & Specialized Sub-Agents"
-        >
-          <div className="relative">
-            <BrainCircuit size={18} className="text-[#C89B3C] group-hover:rotate-12 transition-transform" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#68D391] animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#68D391]" />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-xs font-bold font-mono tracking-tight text-white flex items-center gap-1.5">
-              <span>AI Orchestrator</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#C89B3C]/20 text-[#E8C98B] border border-[#C89B3C]/40 font-mono">
-                400+
+      {hasAccess(3) && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            type="button"
+            onClick={() => openOrchestratorModal('')}
+            className="group px-4 py-2.5 rounded-sm bg-[#101420] hover:bg-[#161D30] border border-[#C89B3C]/50 hover:border-[#C89B3C] text-white shadow-[0_8px_30px_rgba(0,0,0,0.7)] flex items-center gap-2.5 transition-all cursor-pointer backdrop-blur-md"
+            title="Open Sovereign AI Orchestration Mesh"
+          >
+            <BrainCircuit size={17} className="text-[#C89B3C]" />
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold font-mono tracking-tight text-white">
+                AI Orchestrator
               </span>
-            </span>
-            <span className="text-[10px] text-neutral-400 font-mono hidden sm:inline">
-              Multi-Agent Mesh
-            </span>
-          </div>
-        </button>
-      </div>
+              <span className="text-[10px] text-neutral-400 font-mono hidden sm:inline">
+                Tier 3 Copilot
+              </span>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* ========================================================================= */}
-      {/* 17. FLOATING MODAL OVERLAY: INSTITUTIONAL AI ORCHESTRATOR */}
+      {/* 17. FLOATING MODAL OVERLAY: INSTITUTIONAL AI ORCHESTRATOR (Tier 3) */}
       {/* ========================================================================= */}
-      {isOrchestratorModalOpen && (
+      {isOrchestratorModalOpen && hasAccess(3) && (
         <InstitutionalAiOrchestrator
           isModal={true}
           isOpen={isOrchestratorModalOpen}
@@ -4912,23 +4336,7 @@ export const App: React.FC = () => {
           defaultPrompt={orchestratorPrompt}
           onNavigateToTab={(tab, subTab) => {
             setIsOrchestratorModalOpen(false);
-            if (tab === 'governance') {
-              setActiveTab('governance');
-              if (subTab) setGovernanceSubTab(subTab as any);
-            } else if (tab === 'financials') {
-              setActiveTab('financials');
-              if (subTab) setFinancialSubTab(subTab as any);
-            } else if (tab === 'strategy') {
-              setActiveTab('strategy');
-            } else if (tab === 'holdings') {
-              setActiveTab('holdings');
-              if (subTab) setHoldingsSubTab(subTab as any);
-            } else if (tab === 'editorial') {
-              setActiveTab('editorial');
-            } else if (tab === 'orchestrator') {
-              setActiveTab('orchestrator');
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            navigateTo(tab as any, subTab);
           }}
         />
       )}
@@ -4946,6 +4354,7 @@ export const App: React.FC = () => {
         onSelectTier={handleSelectTier}
         onSwitchMode={handleSwitchMode}
         requestedToolId={selectedToolForModal}
+        evaluatorMode={evaluatorMode}
       />
 
     </div>

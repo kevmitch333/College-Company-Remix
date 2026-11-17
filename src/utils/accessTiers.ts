@@ -81,16 +81,22 @@ export interface MembershipTool {
   highlights: string[];
 }
 
+export const PUBLIC_SPOTLIGHT_BRAND_NAMES = [
+  'College Esports Expo (CEX)',
+  'College Esports NIL',
+  'College Racing League (CRL)',
+  'College Drone Racing League (CDRL)'
+];
+
 export const MEMBERSHIP_TOOLS_CATALOG: MembershipTool[] = [
   {
     id: 'student-nil-calc',
     name: 'Student-Athlete NIL Valuation & Escrow Calculator',
-    shortName: 'NIL Calculator',
+    shortName: 'NIL Valuation Calculator',
     category: 'NIL & Athletics',
     requiredTier: 1,
     targetTab: 'strategy',
-    targetSubTab: 'nil',
-    actionModal: 'nil-calculator',
+    targetSubTab: 'nil_calculator',
     description: 'Live interactive compensation simulator computing fair market value, NCAA statutory disclosures, and Title IX distribution parity.',
     badge: 'Tier 1 Clearance',
     highlights: [

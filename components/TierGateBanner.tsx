@@ -77,40 +77,40 @@ export const TierGateBanner: React.FC<TierGateBannerProps> = ({
 
           {/* Status Chip */}
           {isPending ? (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/60 border border-amber-500/40 text-xs font-mono tracking-wider uppercase text-amber-300">
-              <Clock size={12} className="animate-spin" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-amber-950/60 border border-amber-500/40 text-xs font-mono tracking-wider uppercase text-amber-300">
+              <Clock size={12} />
               <span>Application Pending Approval</span>
               <span className="text-amber-500">·</span>
               <span>{targetTierDef.badge} Required</span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono tracking-wider uppercase text-neutral-300">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-white/5 border border-white/10 text-xs font-mono tracking-wider uppercase text-neutral-300">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: targetTierDef.color }}></span>
               <span>{targetTierDef.badge} Required</span>
               <span className="text-neutral-500">·</span>
-              <span className="text-neutral-400">Institutional Wall</span>
+              <span className="text-neutral-400">Membership Wall</span>
             </div>
           )}
 
           <h2 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight">
-            {sectionName} is Protected
+            {sectionName} Requires Membership
           </h2>
 
           {isPending ? (
             <div className="space-y-3">
               <p className="text-sm md:text-base text-amber-200/90 font-light leading-relaxed">
-                Your application for <strong className="text-white">{applicantName || 'Member'}</strong> is currently in review by the College Company Directorate. Once approved, all institutional tools in this tier will unlock automatically.
+                Your application for <strong className="text-white">{applicantName || 'Member'}</strong> is currently under review by the College Company Directorate. Approved tools for your requested tier unlock automatically upon verification.
               </p>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-white/5 border border-white/10 text-xs font-mono text-neutral-300">
                 <CheckCircle2 size={13} className="text-emerald-400" />
-                <span>Domain Verification Verified</span>
+                <span>Application Logged</span>
                 <span className="text-neutral-500">→</span>
-                <span className="text-amber-400 font-semibold">Directorate Final Sign-Off Pending</span>
+                <span className="text-amber-400 font-semibold">Directorate Review In Progress</span>
               </div>
             </div>
           ) : (
             <p className="text-sm md:text-base text-neutral-300 font-light leading-relaxed">
-              This robust workspace contains proprietary institutional assets, regulatory compliance filings, and fiduciary valuation models. Membership approval is required to access these tools.
+              This workspace contains institutional holdings data, regulatory compliance filings, and valuation models reserved for approved members. Sign up or sign in with your verified credentials to unlock access.
             </p>
           )}
 
@@ -118,19 +118,19 @@ export const TierGateBanner: React.FC<TierGateBannerProps> = ({
           <div className="w-full my-6 p-4 rounded-md bg-[#131722]/80 border border-white/[0.06] text-left grid sm:grid-cols-2 gap-3 text-xs font-mono text-neutral-300">
             <div className="flex items-center gap-2">
               <FileCheck2 size={14} className="text-[#C89B3C] shrink-0" />
-              <span>Full DCF Valuation & Cap Table Simulator</span>
+              <span>43-Brand Holdings & 400+ Campus Footprint Map</span>
             </div>
             <div className="flex items-center gap-2">
               <FileCheck2 size={14} className="text-[#C89B3C] shrink-0" />
-              <span>House v. NCAA & Title IX Statutory Audits</span>
+              <span>Athlete NIL Valuation Calculator & Opportunity Radar</span>
             </div>
             <div className="flex items-center gap-2">
               <FileCheck2 size={14} className="text-[#C89B3C] shrink-0" />
-              <span>43 Proprietary Brand Holding Codes</span>
+              <span>House v. NCAA & Title IX Statutory Compliance</span>
             </div>
             <div className="flex items-center gap-2">
               <FileCheck2 size={14} className="text-[#C89B3C] shrink-0" />
-              <span>Multi-Agent Fiduciary AI Orchestrator</span>
+              <span>DCF Valuation Workbench & Multi-Agent AI Mesh</span>
             </div>
           </div>
 
@@ -138,22 +138,22 @@ export const TierGateBanner: React.FC<TierGateBannerProps> = ({
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             {isPending ? (
               <>
+                <button
+                  onClick={onOpenAccessModal}
+                  className="px-6 py-3 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-semibold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer font-mono"
+                >
+                  <Clock size={14} />
+                  <span>View Application Status</span>
+                </button>
                 {onQuickElevate && (
                   <button
                     onClick={() => onQuickElevate(requiredTier)}
-                    className="px-6 py-3 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-semibold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer font-mono"
+                    className="px-5 py-3 bg-[#1A2030] hover:bg-[#222A40] border border-white/20 text-neutral-200 font-mono text-xs rounded-sm transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    <Zap size={14} />
-                    <span>⚡ Instant Approve My Application (Evaluator Fast-Track)</span>
+                    <Zap size={13} className="text-[#C89B3C]" />
+                    <span>Demo Fast-Track</span>
                   </button>
                 )}
-                <button
-                  onClick={onOpenAccessModal}
-                  className="px-5 py-3 bg-[#1A2030] hover:bg-[#222A40] border border-white/20 text-white font-mono text-xs rounded-sm transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  <Clock size={13} className="text-[#38BDF8]" />
-                  <span>Check Status & Credentials</span>
-                </button>
               </>
             ) : (
               <>
@@ -162,7 +162,7 @@ export const TierGateBanner: React.FC<TierGateBannerProps> = ({
                   className="px-6 py-3 bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-semibold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer font-mono"
                 >
                   <KeyRound size={14} />
-                  <span>Sign Up / Request {targetTierDef.name}</span>
+                  <span>Sign Up / Sign In for {targetTierDef.badge}</span>
                   <ArrowRight size={14} />
                 </button>
 
@@ -170,10 +170,9 @@ export const TierGateBanner: React.FC<TierGateBannerProps> = ({
                   <button
                     onClick={() => onQuickElevate(requiredTier)}
                     className="px-5 py-3 bg-[#1A2030] hover:bg-[#222A40] border border-[#C89B3C]/30 text-[#E8C98B] hover:text-white font-mono text-xs rounded-sm transition-all cursor-pointer flex items-center gap-1.5"
-                    title="Instant evaluator clearance for preview"
                   >
                     <Sparkles size={13} className="text-[#C89B3C]" />
-                    <span>Instant Evaluator Clearance ({targetTierDef.badge})</span>
+                    <span>Evaluator Preview ({targetTierDef.badge})</span>
                   </button>
                 )}
               </>
@@ -181,7 +180,7 @@ export const TierGateBanner: React.FC<TierGateBannerProps> = ({
           </div>
 
           <p className="text-[11px] font-mono text-neutral-500 pt-3">
-            Current Clearance: Tier {currentTier} ({TIER_DEFINITIONS[currentTier]?.name}) · Status: {membershipStatus}
+            Current Status: {membershipStatus === 'approved' ? `Approved · Tier ${currentTier}` : membershipStatus === 'pending' ? 'Pending Directorate Review' : 'Public Visitor (Unregistered)'}
           </p>
         </div>
       </div>

@@ -24,8 +24,10 @@ import {
   Cpu,
   Tv,
   TrendingUp,
-  Rss
+  Rss,
+  Lock
 } from 'lucide-react';
+import { AccessProfile, AccessTier, PUBLIC_SPOTLIGHT_BRAND_NAMES } from '../src/utils/accessTiers';
 
 export interface CommandItem {
   id: string;
@@ -35,25 +37,33 @@ export interface CommandItem {
   action: () => void;
   badge?: string;
   icon: React.ReactNode;
+  requiredTier?: AccessTier;
+  toolId?: string;
 }
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   portfolioData: any[];
+  userProfile: AccessProfile;
   onSelectBrand: (brand: any) => void;
   onNavigate: (tab: 'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator', subTab?: string) => void;
   onOpenModal: (modal: 'prospectus' | 'memo' | 'nil_alerts' | 'network' | 'compliance' | 'orchestrator' | 'rss') => void;
+  onRequestAccess: (toolId?: string) => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   portfolioData,
+  userProfile,
   onSelectBrand,
   onNavigate,
-  onOpenModal
+  onOpenModal,
+  onRequestAccess
 }) => {
+  const hasAccess = (reqTier: AccessTier = 0) =>
+    reqTier === 0 || (userProfile.membershipStatus === 'approved' && userProfile.tier >= reqTier);
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -103,6 +113,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Pathway: Universities & Athletic Directors',
         subtitle: 'Amateurism shield, Title IX alignment, 400+ campus footprint & 6-week validation sprint',
         category: 'Audience Pathways',
+        requiredTier: 1,
+        toolId: 'holding-directory-map',
         action: () => {
           onNavigate('holdings', 'map');
           onClose();
@@ -115,6 +127,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Pathway: Institutional Investors & Allocators',
         subtitle: 'Series A mandate, $1.4B TAM simulator, capital structure & executive memorandum',
         category: 'Audience Pathways',
+        requiredTier: 3,
+        toolId: 'dcf-financial-modeler',
         action: () => {
           onNavigate('financials', 'simulator');
           onClose();
@@ -127,6 +141,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Pathway: Fortune 500 Brands & NIL Agencies',
         subtitle: '14,000+ rostered student-athletes, verified escrow clearinghouse & FAST television reach',
         category: 'Audience Pathways',
+        requiredTier: 1,
+        toolId: 'nil-opportunity-radar',
         action: () => {
           onOpenModal('nil_alerts');
           onClose();
@@ -139,8 +155,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Pathway: Student-Athletes & Creators',
         subtitle: 'Annual NIL monetization calculator, protected scholarship status & escrow payouts',
         category: 'Audience Pathways',
+        requiredTier: 1,
+        toolId: 'student-nil-calc',
         action: () => {
-          onNavigate('financials', 'athlete_calculator');
+          onNavigate('strategy', 'nil_calculator');
           onClose();
         },
         badge: 'Athletes',
@@ -155,6 +173,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'TAM & Yield Simulator',
         subtitle: 'Interactive quantitative model projecting campus licensing, NIL take-rate & FAST revenues',
         category: 'Financials',
+        requiredTier: 3,
+        toolId: 'dcf-financial-modeler',
         action: () => {
           onNavigate('financials', 'simulator');
           onClose();
@@ -167,6 +187,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'NIL Analytics & Liquidity Trends',
         subtitle: 'Historical growth curves, deal volume trends & sport-by-sport sponsorship benchmarks',
         category: 'Financials',
+        requiredTier: 3,
+        toolId: 'dcf-financial-modeler',
         action: () => {
           onNavigate('financials', 'nil_analytics');
           onClose();
@@ -178,9 +200,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         id: 'tool-nil-calc',
         title: 'Student-Athlete NIL Valuation Calculator',
         subtitle: 'Interactive earnings model by conference, varsity tier, and social following engagement',
-        category: 'Financials',
+        category: 'Strategy',
+        requiredTier: 1,
+        toolId: 'student-nil-calc',
         action: () => {
-          onNavigate('financials', 'athlete_calculator');
+          onNavigate('strategy', 'nil_calculator');
           onClose();
         },
         badge: 'Calculator',
@@ -195,6 +219,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'National Campus Footprint & Conference Map',
         subtitle: 'Interactive D3 map of 400+ collegiate institutions, Big Ten, SEC, ACC & state metrics',
         category: 'Holdings',
+        requiredTier: 1,
+        toolId: 'holding-directory-map',
         action: () => {
           onNavigate('holdings', 'map');
           onClose();
@@ -207,6 +233,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Operating Holding Ecosystem Topology',
         subtitle: 'Interactive hierarchical architecture map across all 4 synergistic operating divisions',
         category: 'Holdings',
+        requiredTier: 1,
+        toolId: 'holding-directory-map',
         action: () => {
           onNavigate('holdings', 'topology');
           onClose();
@@ -223,8 +251,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Strategic Plan: 4-Function Operating Engine',
         subtitle: 'Rights aggregation, production syndication, commercial clearinghouse & campus software',
         category: 'Strategy',
+        requiredTier: 1,
+        toolId: 'holding-directory-map',
         action: () => {
-          onNavigate('strategy');
+          onNavigate('strategy', 'plan');
           onClose();
         },
         badge: 'Strategy v1.0',
@@ -235,8 +265,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: '43-Asset Commercial Disposition Matrix',
         subtitle: 'Monetization posture, stage maturity, and operating priority across all 43 digital brands',
         category: 'Strategy',
+        requiredTier: 1,
+        toolId: 'holding-directory-map',
         action: () => {
-          onNavigate('strategy');
+          onNavigate('strategy', 'plan');
           onClose();
         },
         badge: 'Portfolio Matrix',
@@ -247,8 +279,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: '6-Week Campus Program Sprint Unit Economics',
         subtitle: 'Phased rollout protocol from varsity charter to commercial sponsor integration',
         category: 'Strategy',
+        requiredTier: 1,
+        toolId: 'holding-directory-map',
         action: () => {
-          onNavigate('strategy');
+          onNavigate('strategy', 'plan');
           onClose();
         },
         badge: 'Unit Economics',
@@ -259,8 +293,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Educational & Rights Firewall Protocol',
         subtitle: 'Fiduciary boundary isolating commercial brand deals from student academic records',
         category: 'Strategy',
+        requiredTier: 1,
+        toolId: 'holding-directory-map',
         action: () => {
-          onNavigate('strategy');
+          onNavigate('strategy', 'plan');
           onClose();
         },
         badge: 'Compliance Shield',
@@ -275,6 +311,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Institutional Compliance & Bylaw Alignment Dashboard',
         subtitle: 'Automated regulatory monitoring, live Proprietary AI Engine telemetry & 50-state bylaw matrix',
         category: 'Governance & Rules',
+        requiredTier: 2,
+        toolId: 'regulatory-audit-table',
         action: () => {
           onNavigate('governance', 'compliance-dashboard');
           onClose();
@@ -287,6 +325,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Athletic Rules & Compliance Repository',
         subtitle: 'Codified NCAA Bylaw 14.2, NAIA Eligibility, Title IX equity protocols & state NIL mandates',
         category: 'Governance & Rules',
+        requiredTier: 2,
+        toolId: 'regulatory-audit-table',
         action: () => {
           onNavigate('governance', 'repository');
           onClose();
@@ -299,6 +339,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Institutional Risk Factors & Mitigation Matrix',
         subtitle: 'Analysis of publisher licensing, antitrust legislation, and macroeconomic mitigations',
         category: 'Governance & Rules',
+        requiredTier: 2,
+        toolId: 'regulatory-audit-table',
         action: () => {
           onNavigate('governance', 'risks');
           onClose();
@@ -311,6 +353,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Executive Summary Memorandum & Charter',
         subtitle: 'Complete institutional briefing document authored by Kevin Mitchell, Managing Member',
         category: 'Governance & Rules',
+        requiredTier: 2,
+        toolId: 'regulatory-audit-table',
         action: () => {
           onNavigate('governance', 'memo');
           onClose();
@@ -380,6 +424,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Request Series A Institutional Prospectus',
         subtitle: 'Confidential capital allocation brief, DCF model & data room credentialing form',
         category: 'Audience Pathways',
+        requiredTier: 0,
         action: () => {
           onOpenModal('prospectus');
           onClose();
@@ -392,11 +437,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Inspect NIL Opportunity Radar',
         subtitle: 'Real-time commercial sponsorship categories, brand bids & active deal requests',
         category: 'Financials',
+        requiredTier: 1,
+        toolId: 'nil-opportunity-radar',
         action: () => {
           onOpenModal('nil_alerts');
           onClose();
         },
-        badge: 'Direct Action',
+        badge: 'Member Tool',
         icon: <Radio size={16} className="text-[#E8C98B]" />
       },
       {
@@ -404,11 +451,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Accredited Member Directory & Secure Messaging',
         subtitle: 'Direct communication portal with managing directors, advisors and partner campuses',
         category: 'Audience Pathways',
+        requiredTier: 1,
+        toolId: 'member-peer-network',
         action: () => {
           onOpenModal('network');
           onClose();
         },
-        badge: 'Direct Action',
+        badge: 'Member Tool',
         icon: <Users size={16} className="text-[#68D391]" />
       },
       // 8. Conversational AI Orchestration & Autonomous Sub-Agents
@@ -417,6 +466,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Launch Autonomous AI Orchestration Mesh',
         subtitle: 'Multi-agent supervisor console routing inquiries across 400+ universities with native reasoning',
         category: 'AI Orchestrator',
+        requiredTier: 3,
+        toolId: 'ai-orchestrator',
         action: () => {
           onNavigate('orchestrator');
           onClose();
@@ -429,6 +480,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'AI Architecture & Deployment Blueprint (400 Campuses)',
         subtitle: 'Technical specifications: Supervisor Ingress, Context Caching, Google Search Grounding & Tool Sandbox',
         category: 'AI Orchestrator',
+        requiredTier: 3,
+        toolId: 'ai-orchestrator',
         action: () => {
           onNavigate('orchestrator', 'blueprint');
           onClose();
@@ -441,6 +494,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Dispatch Agent-NIL · Clearinghouse & Legal Compliance',
         subtitle: 'Automated student contract audit, Title IX parity check & House v. NCAA $22M cap evaluation',
         category: 'AI Orchestrator',
+        requiredTier: 3,
+        toolId: 'ai-orchestrator',
         action: () => {
           onNavigate('orchestrator', 'nil');
           onClose();
@@ -453,6 +508,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Dispatch Agent-Tournament · Circuit Operations',
         subtitle: 'CDRL drone telemetry, CRL sim-racing ruleset, anti-cheat dispute arbitration & eligibility',
         category: 'AI Orchestrator',
+        requiredTier: 3,
+        toolId: 'ai-orchestrator',
         action: () => {
           onNavigate('orchestrator', 'tournament');
           onClose();
@@ -465,6 +522,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Dispatch Agent-Broadcast · FAST Syndication & Connected TV',
         subtitle: '24/7 linear EPG generation, $18–$24 CPM advertising packaging & viewer minute telemetry',
         category: 'AI Orchestrator',
+        requiredTier: 3,
+        toolId: 'ai-orchestrator',
         action: () => {
           onNavigate('orchestrator', 'broadcast');
           onClose();
@@ -477,6 +536,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         title: 'Dispatch Agent-Capital · Fiduciary IR & DCF Simulator',
         subtitle: 'Series A DCF scenario simulation, 43-brand consolidation economics & 84.6% margin modeling',
         category: 'AI Orchestrator',
+        requiredTier: 3,
+        toolId: 'ai-orchestrator',
         action: () => {
           onNavigate('orchestrator', 'capital');
           onClose();
@@ -486,18 +547,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       }
     );
 
-    // 8. All 43 Portfolio Brand Holdings
+    // 8. All 43 Portfolio Brand Holdings (4 Public Spotlights open at Tier 0; remaining 39 require Tier 1)
     portfolioData.forEach((brand) => {
+      const isPublicSpotlight = PUBLIC_SPOTLIGHT_BRAND_NAMES.includes(brand.name);
       items.push({
         id: `brand-${brand.id}`,
         title: brand.name,
         subtitle: `${brand.division} · ${brand.tagline || brand.thesis?.slice(0, 75)}`,
         category: 'Holdings',
+        requiredTier: isPublicSpotlight ? 0 : 1,
+        toolId: isPublicSpotlight ? undefined : 'holding-directory-map',
         action: () => {
           onSelectBrand(brand);
           onClose();
         },
-        badge: brand.cluster || brand.status,
+        badge: isPublicSpotlight ? 'Public Spotlight' : (brand.cluster || brand.status),
         icon: <Briefcase size={16} className="text-[#C89B3C]" />
       });
     });
@@ -526,6 +590,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return result;
   }, [allItems, query, selectedCategory]);
 
+  const executeItem = (item: CommandItem) => {
+    const reqTier = item.requiredTier ?? 0;
+    if (!hasAccess(reqTier)) {
+      onClose();
+      onRequestAccess(item.toolId);
+      return;
+    }
+    item.action();
+  };
+
   // Handle keyboard navigation inside the list
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -537,7 +611,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filteredItems[selectedIndex]) {
-        filteredItems[selectedIndex].action();
+        executeItem(filteredItems[selectedIndex]);
       }
     }
   };
@@ -554,7 +628,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
-  const categories = ['All', 'AI Orchestrator', 'Audience Pathways', 'Holdings', 'Financials', 'Strategy', 'Governance & Rules', 'Intelligence'];
+  const categories = ['All', 'Audience Pathways', 'Holdings', 'Strategy', 'Governance & Rules', 'Financials', 'AI Orchestrator', 'Intelligence'];
 
   return (
     <div 
@@ -577,7 +651,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Search 43 holdings, TAM models, NCAA bylaws, strategy chapters..."
+            placeholder="Search 43 holdings, NIL calculator, compliance rules, or research..."
             className="w-full bg-transparent text-white text-sm placeholder-neutral-500 focus:outline-none font-sans"
           />
           {query ? (
@@ -623,10 +697,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           ) : (
             filteredItems.map((item, idx) => {
               const isSelected = idx === selectedIndex;
+              const reqTier = item.requiredTier ?? 0;
+              const isLocked = !hasAccess(reqTier);
               return (
                 <div
                   key={item.id}
-                  onClick={item.action}
+                  onClick={() => executeItem(item)}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`p-3 rounded-lg flex items-center justify-between gap-3 cursor-pointer transition-colors ${
                     isSelected 
@@ -643,11 +719,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         <span className="font-semibold text-white text-xs truncate font-display">
                           {item.title}
                         </span>
-                        {item.badge && (
+                        {isLocked ? (
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#C89B3C]/15 text-[#E8C98B] border border-[#C89B3C]/30 shrink-0 inline-flex items-center gap-1">
+                            <Lock size={9} />
+                            Tier {reqTier}
+                          </span>
+                        ) : item.badge ? (
                           <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white/5 text-neutral-400 border border-white/10 shrink-0">
                             {item.badge}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                       <p className="text-[11px] text-neutral-400 truncate mt-0.5">
                         {item.subtitle}
@@ -659,7 +740,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <span className="hidden md:inline text-[10px] font-mono text-neutral-500 uppercase">
                       {item.category}
                     </span>
-                    <ArrowRight size={13} className={`transition-transform ${isSelected ? 'text-[#C89B3C] translate-x-0.5' : 'text-neutral-600'}`} />
+                    {isLocked ? (
+                      <Lock size={13} className={isSelected ? 'text-[#C89B3C]' : 'text-neutral-500'} />
+                    ) : (
+                      <ArrowRight size={13} className={`transition-transform ${isSelected ? 'text-[#C89B3C] translate-x-0.5' : 'text-neutral-600'}`} />
+                    )}
                   </div>
                 </div>
               );

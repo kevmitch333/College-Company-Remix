@@ -38,8 +38,9 @@ interface PrivateAccessGateModalProps {
   currentProfile: AccessProfile;
   onSelectTier: (tier: AccessTier, customProfile?: Partial<AccessProfile>) => void;
   onSwitchMode: (mode: 'consumer' | 'portal') => void;
-  initialTab?: 'apply' | 'status' | 'tiers' | 'demo';
+  initialTab?: 'apply' | 'status' | 'tiers' | 'demo' | 'google';
   requestedToolId?: string;
+  evaluatorMode?: boolean;
 }
 
 export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
@@ -49,29 +50,51 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
   onSelectTier,
   onSwitchMode,
   initialTab = 'apply',
-  requestedToolId
+  requestedToolId,
+  evaluatorMode = false
 }) => {
   const [activeTab, setActiveTab] = useState<'apply' | 'status' | 'tiers' | 'demo' | 'google'>(
     currentProfile.membershipStatus === 'pending' ? 'status' : initialTab
   );
+  const [showEvaluatorTab, setShowEvaluatorTab] = useState<boolean>(evaluatorMode);
+
+  const targetTool = requestedToolId 
+    ? MEMBERSHIP_TOOLS_CATALOG.find(t => t.id === requestedToolId) 
+    : null;
 
   // Application Form State
   const [applicantName, setApplicantName] = useState(currentProfile.displayName !== 'Public Guest' ? currentProfile.displayName : '');
   const [applicantEmail, setApplicantEmail] = useState(currentProfile.email !== 'visitor@collegiate-guest.org' ? currentProfile.email : '');
   const [applicantOrg, setApplicantOrg] = useState(currentProfile.organization !== 'Prospective Partner' ? currentProfile.organization : '');
   const [applicantRole, setApplicantRole] = useState<'campus_partner' | 'athletic_director' | 'accredited_investor'>('athletic_director');
-  const [selectedTrackTier, setSelectedTrackTier] = useState<AccessTier>(2);
+  const [selectedTrackTier, setSelectedTrackTier] = useState<AccessTier>(targetTool?.requiredTier || 2);
   const [useCaseReason, setUseCaseReason] = useState('');
   const [ndaAgreed, setNdaAgreed] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applySuccessMessage, setApplySuccessMessage] = useState<string | null>(null);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  React.useEffect(() => {
+    if (isOpen) {
+      if (targetTool) {
+        setSelectedTrackTier(targetTool.requiredTier);
+        setApplicantRole(
+          targetTool.requiredTier === 3
+            ? 'accredited_investor'
+            : targetTool.requiredTier === 2
+            ? 'athletic_director'
+            : 'campus_partner'
+        );
+      }
+      if (currentProfile.membershipStatus === 'pending') {
+        setActiveTab('status');
+      } else {
+        setActiveTab(initialTab);
+      }
+    }
+  }, [isOpen, targetTool, currentProfile.membershipStatus, initialTab]);
 
-  const targetTool = requestedToolId 
-    ? MEMBERSHIP_TOOLS_CATALOG.find(t => t.id === requestedToolId) 
-    : null;
+  if (!isOpen) return null;
 
   // Handle standard application submission (puts user in pending review or instant approved)
   const handleApplySubmit = (e: React.FormEvent, instantApprove: boolean = false) => {
@@ -135,7 +158,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
         onSelectTier(0, pendingProfile);
         setIsSubmitting(false);
         setActiveTab('status');
-        setApplySuccessMessage(`Application Received! Your credential is under review. You can simulate instant approval anytime.`);
+        setApplySuccessMessage(`Application received. Your credentials are now queued for Directorate verification.`);
       }
     }, 450);
   };
@@ -308,7 +331,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
             <Clock size={13} />
             <span>2. Application Status</span>
             {currentProfile.membershipStatus === 'pending' && (
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
             )}
           </button>
 
@@ -325,18 +348,6 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('demo')}
-            className={`py-3 px-4 border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === 'demo'
-                ? 'border-[#C89B3C] text-[#E8C98B] font-bold'
-                : 'border-transparent text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Zap size={13} className="text-[#C89B3C]" />
-            <span>4. 1-Click Role Switcher</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('google')}
             className={`py-3 px-4 border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
               activeTab === 'google'
@@ -344,8 +355,22 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                 : 'border-transparent text-neutral-400 hover:text-white'
             }`}
           >
-            <span>Google SSO</span>
+            <span>4. Member Sign-In (SSO)</span>
           </button>
+
+          {showEvaluatorTab && (
+            <button
+              onClick={() => setActiveTab('demo')}
+              className={`py-3 px-4 border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                activeTab === 'demo'
+                  ? 'border-[#C89B3C] text-[#E8C98B] font-bold'
+                  : 'border-transparent text-neutral-400 hover:text-white'
+              }`}
+            >
+              <Zap size={13} className="text-[#C89B3C]" />
+              <span>Evaluator Switcher</span>
+            </button>
+          )}
         </div>
 
         {/* Body Content */}
@@ -530,22 +555,22 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                 {/* Submission CTA Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                   <button
-                    type="button"
-                    onClick={(e) => handleApplySubmit(e, true)}
-                    disabled={isSubmitting || !applicantName || !applicantEmail}
-                    className="w-full sm:w-auto px-5 py-3 rounded-sm bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-mono text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                    type="submit"
+                    disabled={isSubmitting || !applicantName || !applicantEmail || !ndaAgreed}
+                    className="w-full sm:w-auto px-6 py-3 rounded-sm bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-mono text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
                   >
-                    <Zap size={14} />
-                    <span>⚡ Instant Fast-Track Approval (Evaluator Mode)</span>
+                    <ShieldCheck size={14} />
+                    <span>{isSubmitting ? 'Submitting Application...' : 'Submit Membership Application'}</span>
+                    <ArrowRight size={14} />
                   </button>
 
                   <button
-                    type="submit"
-                    disabled={isSubmitting || !applicantName || !applicantEmail}
-                    className="w-full sm:w-auto px-5 py-3 rounded-sm bg-[#182030] hover:bg-[#1E2638] border border-white/20 text-white font-mono text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                    type="button"
+                    onClick={() => setActiveTab('google')}
+                    className="w-full sm:w-auto px-5 py-3 rounded-sm bg-[#182030] hover:bg-[#1E2638] border border-white/15 text-neutral-200 font-mono text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <Clock size={14} className="text-[#38BDF8]" />
-                    <span>Submit for Formal Review</span>
+                    <Mail size={14} className="text-[#C89B3C]" />
+                    <span>Existing Member? Sign In with Google</span>
                   </button>
                 </div>
 
@@ -579,7 +604,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                       </span>
                     ) : currentProfile.membershipStatus === 'pending' ? (
                       <span className="px-3 py-1 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300 font-mono text-xs font-semibold flex items-center gap-1.5">
-                        <Clock size={14} className="animate-spin" />
+                        <Clock size={14} />
                         In Review by Directorate
                       </span>
                     ) : (
@@ -654,13 +679,13 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
 
               {/* Action Buttons for Status */}
               <div className="flex flex-wrap items-center justify-between gap-3">
-                {currentProfile.membershipStatus === 'pending' && (
+                {currentProfile.membershipStatus === 'pending' && showEvaluatorTab && (
                   <button
                     onClick={handleFastTrackApprovePending}
                     className="px-5 py-3 rounded-sm bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-mono text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-sm"
                   >
                     <Zap size={14} />
-                    <span>⚡ Instant Approve This Application (Evaluator Fast-Track)</span>
+                    <span>Evaluator Fast-Track Approve</span>
                   </button>
                 )}
 
@@ -673,7 +698,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                     className="px-5 py-3 rounded-sm bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-mono text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-sm"
                   >
                     <ArrowRight size={14} />
-                    <span>Enter Unlocked Member Portal →</span>
+                    <span>Enter Member Workspace →</span>
                   </button>
                 )}
 
@@ -681,7 +706,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                   onClick={handleResetToGuest}
                   className="px-4 py-2 rounded-sm bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white font-mono text-xs cursor-pointer transition-colors"
                 >
-                  Reset / Clear Application
+                  {currentProfile.membershipStatus === 'approved' ? 'Sign Out' : 'Reset / Withdraw Application'}
                 </button>
               </div>
 
@@ -749,10 +774,20 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => handleInstantPreset(def.tier)}
+                        onClick={() => {
+                          setSelectedTrackTier(def.tier);
+                          setApplicantRole(
+                            def.tier === 3
+                              ? 'accredited_investor'
+                              : def.tier === 2
+                              ? 'athletic_director'
+                              : 'campus_partner'
+                          );
+                          setActiveTab('apply');
+                        }}
                         className="mt-5 w-full py-2.5 rounded-sm bg-[#161B26] hover:bg-[#1E2536] border border-white/15 text-white font-mono text-xs font-semibold cursor-pointer transition-all text-center"
                       >
-                        Simulate Tier {def.tier} Access →
+                        Apply for Tier {def.tier} →
                       </button>
                     </div>
                   );
@@ -895,14 +930,27 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-white/[0.08] bg-[#0E121B] flex items-center justify-between text-xs font-mono shrink-0">
-          <span className="text-neutral-500">
-            College Company Governance & Institutional Security
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-neutral-500">
+              College Company Governance & Security
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !showEvaluatorTab;
+                setShowEvaluatorTab(next);
+                if (next) setActiveTab('demo');
+              }}
+              className="text-neutral-600 hover:text-neutral-300 transition-colors cursor-pointer text-[11px]"
+            >
+              {showEvaluatorTab ? 'Hide Evaluator Mode' : 'Evaluator Preview'}
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-white transition-colors cursor-pointer"
           >
-            Close Window [Esc]
+            Close [Esc]
           </button>
         </div>
 
