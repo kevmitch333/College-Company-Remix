@@ -221,7 +221,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
       }, 1200);
     } catch (err: any) {
       console.warn("Google sign-in popup notice:", err);
-      setGoogleAuthError("Google pop-up was closed or cancelled. Use Instant Fast-Track or Presets below to test any tier immediately.");
+      setGoogleAuthError("Google sign-in pop-up was closed or unavailable. Please try again or submit a Membership Application under Tab 1.");
     }
   };
 
@@ -258,9 +258,9 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-display font-bold text-base text-white">
+                <h2 className="font-display font-bold text-lg text-white">
                   College Company Membership Wall
-                </h3>
+                </h2>
                 {currentProfile.membershipStatus === 'approved' ? (
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1">
                     <CheckCircle2 size={10} />

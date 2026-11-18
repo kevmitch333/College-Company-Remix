@@ -47,6 +47,10 @@ import { db, ensureAuthenticated } from '../src/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NewsletterSignup } from './NewsletterSignup';
 import { RssSubscriptionModal } from './RssSubscriptionModal';
+import heroArenaImg from '../src/assets/images/hero_collegiate_arena_1790396550961.jpg';
+import mediaBroadcastImg from '../src/assets/images/media_broadcast_center_1790396570502.jpg';
+import executiveBoardroomImg from '../src/assets/images/diverse_boardroom_1791594527458.jpg';
+import creatorStudioImg from '../src/assets/images/creator_studio_1791594557100.jpg';
 
 export type ArticleCategory = 
   | 'All Dispatches' 
@@ -72,23 +76,23 @@ export interface Article {
   featured?: boolean;
 }
 
-// Preset Institutional Imagery for Article Covers
+// Preset Institutional Imagery for Article Covers (Bundled Production Assets)
 const PRESET_COVERS = [
   {
-    name: 'Varsity Arena Arena Broadcast',
-    url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80'
+    name: 'Varsity Arena Broadcast',
+    url: heroArenaImg
   },
   {
-    name: 'Collegiate Campus Innovation Hub',
-    url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=80'
+    name: 'Collegiate Campus Studio Hub',
+    url: creatorStudioImg
   },
   {
     name: 'Executive Boardroom Diligence',
-    url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80'
+    url: executiveBoardroomImg
   },
   {
-    name: 'Broadcast Production Truck & Feeds',
-    url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1400&q=80'
+    name: 'Broadcast Production Center',
+    url: mediaBroadcastImg
   }
 ];
 
@@ -100,7 +104,7 @@ const SEED_ARTICLES: Omit<Article, 'id' | 'createdAt'>[] = [
     category: 'Holding Strategy',
     authorName: 'Elena Rostova',
     authorRole: 'Managing Director, Sovereign Capital & Collegiate Media',
-    coverImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80',
+    coverImage: heroArenaImg,
     readTime: '6 min read',
     publishedAtFormatted: 'October 2026',
     featured: true,
@@ -141,7 +145,7 @@ Higher education institutions that embrace structured digital sports governance 
     category: 'Athletic Compliance',
     authorName: 'Sarah Jenkins, J.D.',
     authorRole: 'Chief Regulatory Counsel, Collegiate Compliance Directorate',
-    coverImage: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80',
+    coverImage: executiveBoardroomImg,
     readTime: '5 min read',
     publishedAtFormatted: 'September 2026',
     featured: false,
@@ -175,7 +179,7 @@ Compliance is not an afterthought; it is our primary moat. By providing athletic
     category: 'Campus Infrastructure',
     authorName: 'Marcus Vance',
     authorRole: 'Head of Campus Infrastructure & Facility Design',
-    coverImage: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=80',
+    coverImage: creatorStudioImg,
     readTime: '4 min read',
     publishedAtFormatted: 'August 2026',
     featured: false,
@@ -206,7 +210,7 @@ Investing in campus digital sports infrastructure is an investment in modern hig
     category: 'Media Rights',
     authorName: 'David Kim',
     authorRole: 'VP of Media Syndication & Rights Valuations',
-    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1400&q=80',
+    coverImage: mediaBroadcastImg,
     readTime: '5 min read',
     publishedAtFormatted: 'July 2026',
     featured: false,
@@ -258,6 +262,8 @@ export const BlogEditorialSection: React.FC = () => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
+  const [editorError, setEditorError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Categories list
   const categories: ArticleCategory[] = [
@@ -447,6 +453,7 @@ Concluding thoughts for university partners, athletic directors, and accredited 
       }
 
       setPublishSuccess(true);
+      setEditorError(null);
       setTimeout(() => {
         setPublishSuccess(false);
         setIsEditorOpen(false);
@@ -455,20 +462,24 @@ Concluding thoughts for university partners, athletic directors, and accredited 
     } catch (err) {
       console.error('Error saving article to Firestore:', err);
       setPublishing(false);
-      alert('Unable to save article to Firestore. Please check connection and try again.');
+      setEditorError('Unable to save article to Firestore. Please check connection and try again.');
     }
   };
 
   // Delete Article
   const handleDeleteArticle = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (!window.confirm('Are you sure you wish to delete this published dispatch from the institutional register?')) return;
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      return;
+    }
 
     try {
       await deleteDoc(doc(db, 'articles', id));
       if (selectedArticle?.id === id) {
         setSelectedArticle(null);
       }
+      setConfirmDeleteId(null);
     } catch (err) {
       console.error('Error deleting article:', err);
       // Fallback local remove
@@ -476,6 +487,7 @@ Concluding thoughts for university partners, athletic directors, and accredited 
       if (selectedArticle?.id === id) {
         setSelectedArticle(null);
       }
+      setConfirmDeleteId(null);
     }
   };
 
@@ -533,13 +545,33 @@ Concluding thoughts for university partners, athletic directors, and accredited 
                   <span>Edit Dispatch</span>
                 </button>
 
-                <button
-                  onClick={(e) => handleDeleteArticle(selectedArticle.id, e)}
-                  className="px-3 py-1.5 bg-red-950/30 hover:bg-red-950/50 border border-red-500/20 text-red-300 hover:text-red-200 rounded text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Trash2 size={13} />
-                  <span>Delete</span>
-                </button>
+                {confirmDeleteId === selectedArticle.id ? (
+                  <div className="flex items-center gap-1.5 font-mono text-xs">
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteArticle(selectedArticle.id, e)}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded font-semibold cursor-pointer"
+                    >
+                      Confirm Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="px-2.5 py-1.5 bg-[#141822] hover:bg-[#1C2230] border border-white/10 text-neutral-300 rounded cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteArticle(selectedArticle.id, e)}
+                    className="px-3 py-1.5 bg-red-950/30 hover:bg-red-950/50 border border-red-500/20 text-red-300 hover:text-red-200 rounded text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -587,7 +619,7 @@ Concluding thoughts for university partners, athletic directors, and accredited 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80';
+                  (e.target as HTMLImageElement).src = heroArenaImg;
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#090A0C] via-transparent to-transparent opacity-60 pointer-events-none" />
@@ -689,9 +721,9 @@ Concluding thoughts for university partners, athletic directors, and accredited 
                 <BookOpen size={14} />
                 <span>Institutional Research · Thought Leadership & Dispatches</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-white tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
                 Collegiate Market Intelligence & Editorial
-              </h1>
+              </h2>
               <p className="text-neutral-400 text-sm sm:text-base leading-relaxed">
                 Strategic perspectives on higher education digital sports consolidation, conference media rights, 
                 Title IX governance, and student-athlete NIL capital dynamics.
@@ -813,6 +845,9 @@ Concluding thoughts for university partners, athletic directors, and accredited 
                   src={featuredArticle.coverImage} 
                   alt={featuredArticle.title} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = heroArenaImg;
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#11141F] via-transparent to-transparent opacity-80 pointer-events-none" />
               </div>
@@ -835,7 +870,7 @@ Concluding thoughts for university partners, athletic directors, and accredited 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     referrerPolicy="no-referrer"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1400&q=80';
+                      (e.target as HTMLImageElement).src = heroArenaImg;
                     }}
                   />
                   <div className="absolute top-3 left-3">
@@ -962,6 +997,13 @@ Concluding thoughts for university partners, athletic directors, and accredited 
                 <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-lg text-xs text-[#68D391] font-mono flex items-center gap-2">
                   <CheckCircle2 size={16} />
                   <span>Article successfully synchronized with Firestore and published to live dispatches!</span>
+                </div>
+              )}
+
+              {editorError && (
+                <div className="p-3 bg-red-950/60 border border-red-500/40 rounded-lg text-xs text-red-200 font-mono flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  <span>{editorError}</span>
                 </div>
               )}
 

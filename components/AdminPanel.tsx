@@ -25,6 +25,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, images,
   const [newLabel, setNewLabel] = useState('');
   const [newSublabel, setNewSublabel] = useState('');
   const [newIcon, setNewIcon] = useState('Building2');
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   if (!isOpen) return null;
 
@@ -73,7 +75,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, images,
 
   const handleDelete = (index: number) => {
     if (images.length <= 1) {
-      alert("A minimum of one showcase asset is required for the executive carrier.");
+      setStatusMessage("A minimum of one showcase asset is required for the executive carrier.");
+      setTimeout(() => setStatusMessage(null), 3500);
       return;
     }
     const updatedImages = images.filter((_, i) => i !== index);
@@ -82,11 +85,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, images,
   };
 
   const handleReset = () => {
-    if (window.confirm('Reset all hero visual carriers to institutional defaults? Custom links will be cleared.')) {
-      localStorage.removeItem('heroImages');
-      localStorage.removeItem('heroImagesVersion');
-      window.location.reload();
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
     }
+    localStorage.removeItem('heroImages');
+    localStorage.removeItem('heroImagesVersion');
+    window.location.reload();
   };
 
   return (
@@ -211,14 +216,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose, images,
               ))}
             </div>
             
-            <div className="pt-5 border-t border-white/10 mt-6 flex justify-between items-center text-xs">
+            {statusMessage && (
+              <div className="mt-3 px-3 py-2 rounded bg-amber-950/50 border border-amber-500/40 text-xs font-mono text-amber-200">
+                {statusMessage}
+              </div>
+            )}
+
+            <div className="pt-5 border-t border-white/10 mt-6 flex flex-wrap justify-between items-center gap-3 text-xs">
               <span className="text-neutral-500">Changes persist to local environment.</span>
-              <button 
-                onClick={handleReset}
-                className="text-neutral-400 hover:text-red-400 transition-colors flex items-center gap-1.5"
-              >
-                <RotateCcw size={12} /> Reset to Defaults
-              </button>
+              {confirmReset ? (
+                <div className="flex items-center gap-2 font-mono">
+                  <span className="text-amber-300">Clear custom slides?</span>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="px-2.5 py-1 rounded bg-red-600 hover:bg-red-500 text-white font-semibold cursor-pointer"
+                  >
+                    Confirm Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmReset(false)}
+                    className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-neutral-300 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="text-neutral-400 hover:text-red-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw size={12} /> Reset to Defaults
+                </button>
+              )}
             </div>
           </div>
         </div>

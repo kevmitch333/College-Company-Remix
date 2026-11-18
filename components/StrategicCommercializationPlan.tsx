@@ -431,9 +431,9 @@ Executive Summary:
           </div>
 
           <div className="max-w-4xl space-y-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
               The Commercial Operating Engine & Rights Gateway
-            </h1>
+            </h2>
             <p className="text-neutral-300 text-base sm:text-lg leading-relaxed font-light">
               College Company’s definitive blueprint transitioning from a portfolio of speculative collegiate domains into a 
               <span className="text-[#E8C98B] font-medium"> disciplined, 4-function commercialization platform</span>. 
@@ -794,7 +794,7 @@ Executive Summary:
                     </div>
 
                     <div>
-                      <h3 className="text-base font-bold text-white group-hover:text-[#E8C98B] transition-colors flex items-center justify-between">
+                      <h3 className="text-base font-display font-bold text-white group-hover:text-[#E8C98B] transition-colors flex items-center justify-between">
                         <span>{asset.name}</span>
                         <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-[#E8C98B]" />
                       </h3>
@@ -1038,14 +1038,14 @@ Executive Summary:
                 <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
                   <div>
                     <div className="text-xs font-mono text-neutral-400 uppercase">Gross Contract Value</div>
-                    <div className="text-3xl font-display font-bold text-white font-mono mt-1">
+                    <div className="text-3xl font-bold text-white font-mono tabular-nums mt-1">
                       ${scoperEconomics.grossRevenue.toLocaleString()}
                     </div>
                   </div>
 
                   <div className="text-right">
                     <div className="text-xs font-mono text-neutral-400 uppercase">Contribution Margin</div>
-                    <div className="text-3xl font-display font-bold text-emerald-400 font-mono mt-1">
+                    <div className="text-3xl font-bold text-emerald-400 font-mono tabular-nums mt-1">
                       {scoperEconomics.contributionMarginPct}%
                     </div>
                   </div>

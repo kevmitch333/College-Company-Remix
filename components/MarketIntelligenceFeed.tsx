@@ -238,10 +238,7 @@ export const MarketIntelligenceFeed: React.FC<{
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-white/[0.08] pb-6">
         <div className="space-y-2 max-w-2xl">
           <div className="flex items-center gap-2 text-xs font-mono text-[#C89B3C] uppercase tracking-wider font-semibold">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#68D391] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#68D391]"></span>
-            </span>
+            <span className="inline-flex rounded-full h-2 w-2 bg-[#68D391]" />
             <span>Institutional Research Wire · Real-Time Market Intelligence</span>
           </div>
 

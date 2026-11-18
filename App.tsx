@@ -938,6 +938,7 @@ export const App: React.FC = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [legalModalType, setLegalModalType] = useState<LegalModalType>(null);
   const [isRssModalOpen, setIsRssModalOpen] = useState(false);
+  const [memoCopied, setMemoCopied] = useState(false);
 
   // Global Command Palette Shortcut (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -1360,6 +1361,22 @@ export const App: React.FC = () => {
                   <span>AI Orchestration Mesh</span>
                   {userProfile.tier < 3 && <Lock size={12} className="text-neutral-500" />}
                 </button>
+                <div className="pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setIsAccessGateModalOpen(true); setIsMobileNavOpen(false); }}
+                    className="py-2.5 bg-[#161B26] border border-[#C89B3C]/40 text-[#E8C98B] font-bold text-center rounded-sm"
+                  >
+                    Account (T{userProfile.tier})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsInvestorModalOpen(true); setIsMobileNavOpen(false); }}
+                    className="py-2.5 bg-[#C89B3C] text-[#090A0C] font-bold text-center rounded-sm"
+                  >
+                    Request Deck
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -1460,8 +1477,9 @@ export const App: React.FC = () => {
                       </button>
                       
                       <button
-                        onClick={() => { setActiveTab('holdings'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className="px-6 py-3.5 bg-[#14171E] hover:bg-[#1A1F29] border border-white/10 text-[#F5F5F3] font-medium text-xs uppercase tracking-wider rounded-sm transition-all"
+                        type="button"
+                        onClick={() => navigateTo('holdings', 'directory')}
+                        className="px-6 py-3.5 bg-[#14171E] hover:bg-[#1A1F29] border border-white/10 text-[#F5F5F3] font-medium text-xs uppercase tracking-wider rounded-sm transition-all cursor-pointer"
                       >
                         Explore {PORTFOLIO_DATA.length} Strategic Holdings
                       </button>
@@ -1571,14 +1589,16 @@ export const App: React.FC = () => {
                             </p>
                             <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px]">
                               <button 
-                                onClick={() => { setActiveTab('holdings'); setHoldingsSubTab('map'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                type="button"
+                                onClick={() => navigateTo('holdings', 'map')}
                                 className="px-3 py-1.5 bg-[#1A2030] hover:bg-[#222A40] text-[#E8C98B] border border-[#C89B3C]/30 rounded-sm cursor-pointer flex items-center gap-1.5 transition-colors"
                               >
                                 <MapPin size={11} className="text-[#C89B3C]" />
                                 <span>Explore 400+ Campus Footprint Map →</span>
                               </button>
                               <button 
-                                onClick={() => { setActiveTab('strategy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                type="button"
+                                onClick={() => navigateTo('strategy', 'plan')}
                                 className="px-3 py-1.5 bg-[#1A2030] hover:bg-[#222A40] text-neutral-200 border border-white/10 rounded-sm cursor-pointer flex items-center gap-1.5 transition-colors"
                               >
                                 <Zap size={11} className="text-[#C89B3C]" />
@@ -2785,7 +2805,7 @@ export const App: React.FC = () => {
                   <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-widest">
                     Tier 1 Member Workspace
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight mt-1">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white tracking-tight mt-1">
                     {strategySubTab === 'nil_calculator'
                       ? 'Student-Athlete NIL Valuation & Escrow Calculator'
                       : 'Strategic Commercialization Plan (v1.0)'}
@@ -2859,7 +2879,7 @@ export const App: React.FC = () => {
                 <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-widest">
                   Quantitative Analysis · Unit Economics
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-display font-bold text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white tracking-tight mt-1">
                   Collegiate Ecosystem TAM & Yield Simulator
                 </h1>
                 <p className="text-neutral-400 text-sm sm:text-base leading-relaxed">
@@ -3445,15 +3465,17 @@ export const App: React.FC = () => {
                         <span>Print Memo</span>
                       </button>
                       <button
+                        type="button"
                         onClick={() => {
-                          const text = "COLLEGE COMPANY EXECUTIVE MEMORANDUM\nSeries A Mandate: Consolidating Collegiate Digital Sports, Media Rights & NIL Economy across 400+ North American universities.\n\nKey Moat: 43 generic category-defining digital assets (CEX, CDRL, College Esports TV, College NIL Hub).\nMonetization: NIL Marketplace 15% take-rate, Media Rights FAST linear carriage, and Enterprise Campus SaaS.\nInquiries: investors@collegecompany.com";
+                          const text = "COLLEGE COMPANY EXECUTIVE MEMORANDUM\nSeries A Mandate: Consolidating Collegiate Digital Sports, Media Rights & NIL Economy across 400+ North American universities.\n\nKey Moat: 43 generic category-defining digital assets (CEX, CDRL, College Esports TV, College NIL Hub).\nMonetization: NIL Marketplace 15% take-rate, Media Rights FAST linear carriage, and Enterprise Campus SaaS.\nInquiries: kevin@collegeesportsx.com";
                           navigator.clipboard.writeText(text);
-                          alert("Executive Memorandum text copied to clipboard.");
+                          setMemoCopied(true);
+                          setTimeout(() => setMemoCopied(false), 2500);
                         }}
                         className="px-3 py-1.5 bg-[#171C26] hover:bg-[#202735] border border-white/10 text-neutral-300 hover:text-white rounded-sm flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <Copy size={13} />
-                        <span>Copy Brief</span>
+                        {memoCopied ? <Check size={13} className="text-[#68D391]" /> : <Copy size={13} />}
+                        <span>{memoCopied ? 'Copied Brief' : 'Copy Brief'}</span>
                       </button>
                     </div>
                   </div>
@@ -3747,7 +3769,7 @@ export const App: React.FC = () => {
             <div className="md:col-span-2 space-y-3">
               <div className="text-xs font-mono uppercase tracking-wider text-[#C89B3C]">Direct Inquiries</div>
               <ul className="space-y-2 text-xs text-neutral-400">
-                <li><a href="mailto:kevin@collegeesportsx.com" className="hover:text-white transition-colors">investors@collegecompany.com</a></li>
+                <li><a href="mailto:kevin@collegeesportsx.com" className="hover:text-white transition-colors">kevin@collegeesportsx.com</a></li>
                 <li><span className="text-neutral-500">Institutional Line: +1 (617) 500-CEX0</span></li>
                 <li><span className="text-neutral-500">EIN / C-Corp: Registered Delaware</span></li>
               </ul>
@@ -4180,8 +4202,9 @@ export const App: React.FC = () => {
               <span className="text-neutral-500 font-mono">Confidential · For Authorized Discussion Only</span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => { setIsMemoOpen(false); setActiveTab('strategy'); }}
-                  className="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-semibold uppercase tracking-wider rounded-sm transition-colors text-xs"
+                  type="button"
+                  onClick={() => { setIsMemoOpen(false); navigateTo('strategy', 'plan'); }}
+                  className="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-semibold uppercase tracking-wider rounded-sm transition-colors text-xs cursor-pointer"
                 >
                   Explore Strategic Plan (v1.0)
                 </button>
