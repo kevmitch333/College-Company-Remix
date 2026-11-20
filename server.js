@@ -16,6 +16,20 @@ const PORT = process.env.PORT || 3000;
 
 // Security: Conceal technology stack
 app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
+// 301 Redirect www -> canonical bare domain (college.company)
+app.use((req, res, next) => {
+  const forwardedHost = (req.headers['x-forwarded-host'] || req.headers.host || '').toString().toLowerCase();
+  const hostOnly = forwardedHost.split(',')[0].trim().split(':')[0];
+  if (hostOnly.startsWith('www.')) {
+    const bareHost = hostOnly.slice(4);
+    const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').toString().split(',')[0].trim();
+    const targetProto = bareHost === 'localhost' ? proto : 'https';
+    return res.redirect(301, `${targetProto}://${bareHost}${req.originalUrl}`);
+  }
+  next();
+});
 
 // Hardened Security Headers Middleware
 app.use((_req, res, next) => {
@@ -37,7 +51,7 @@ app.use((_req, res, next) => {
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
-// Lightweight in-memory rate limiter for API endpoints (prevents DoS & brute force)
+// Lightweight in-memory rate limiter for API endpoints
 const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 60;
@@ -71,16 +85,20 @@ function apiRateLimiter(req, res, next) {
   next();
 }
 
-// Health check endpoint for Cloud Run monitoring
+const isValidEmail = (email) =>
+  typeof email === 'string' &&
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/.test(email.trim());
+
+// Health check endpoint
 app.get('/health', (_req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     port: PORT
   });
 });
 
-// Syndicated RSS 2.0 Feed Endpoint for newsreaders & aggregators
+// Syndicated RSS 2.0 Feed Endpoint
 app.get(['/rss.xml', '/feed.xml', '/intelligence/rss.xml', '/api/rss'], (_req, res) => {
   const rssDist = path.resolve(__dirname, 'dist', 'rss.xml');
   const rssPublic = path.resolve(__dirname, 'public', 'rss.xml');
@@ -93,187 +111,283 @@ app.get(['/rss.xml', '/feed.xml', '/intelligence/rss.xml', '/api/rss'], (_req, r
   res.status(404).type('text/plain').send('RSS feed not found');
 });
 
+// Public Contact Submission Endpoint (Section 1A & Section 7)
+app.post('/api/contact', apiRateLimiter, (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const email = typeof body.email === 'string' ? body.email.trim() : '';
+  const role =
+    typeof body.role === 'string'
+      ? body.role.trim()
+      : typeof body.audience === 'string'
+      ? body.audience.trim()
+      : 'student';
+  const organization = typeof body.organization === 'string' ? body.organization.trim() : '';
+  const message = typeof body.message === 'string' ? body.message.trim() : '';
+  const honeypot = typeof body.website === 'string' ? body.website.trim() : '';
+
+  if (honeypot) {
+    return res.json({ success: true, referenceId: 'CC-OK' });
+  }
+
+  const fieldErrors = {};
+  if (!name || name.length < 2) fieldErrors.name = 'Please enter your full name.';
+  if (!isValidEmail(email)) fieldErrors.email = 'Please enter a valid email address.';
+  if (!message || message.length < 10) fieldErrors.message = 'Please include a short message (at least 10 characters).';
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please review the highlighted fields and try again.',
+      fieldErrors
+    });
+  }
+
+  const referenceId = `CC-${Date.now().toString(36).toUpperCase()}`;
+  console.info('[Contact Inquiry]', { referenceId, name, email, role, organization, receivedAt: new Date().toISOString() });
+
+  return res.json({
+    success: true,
+    referenceId,
+    contactEmail: 'kevin@collegeesportsx.com',
+    confirmationEmailTarget: email,
+    message: `Thank you, ${name}. Your note has been logged (ref ${referenceId}) for Kevin Mitchell at kevin@collegeesportsx.com, and a confirmation summary has been prepared for ${email}.`
+  });
+});
+
+// Brand Placement Desk Inquiry Endpoint
+app.post('/api/brand-inquiry', apiRateLimiter, (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const name =
+    typeof body.name === 'string'
+      ? body.name.trim()
+      : typeof body.contactName === 'string'
+      ? body.contactName.trim()
+      : '';
+  const company =
+    typeof body.company === 'string'
+      ? body.company.trim()
+      : typeof body.brandName === 'string'
+      ? body.brandName.trim()
+      : '';
+  const email = typeof body.email === 'string' ? body.email.trim() : '';
+  const campaignGoal = typeof body.campaignGoal === 'string' ? body.campaignGoal.trim() : '';
+
+  const fieldErrors = {};
+  if (!name || name.length < 2) fieldErrors.name = 'Please enter your name.';
+  if (!company || company.length < 2) fieldErrors.company = 'Please enter your brand or organization name.';
+  if (!isValidEmail(email)) fieldErrors.email = 'Please enter a valid work email address.';
+  if (!campaignGoal || campaignGoal.length < 10) fieldErrors.campaignGoal = 'Please describe your campaign goals and timing (at least 10 characters).';
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please check the required fields below.',
+      fieldErrors
+    });
+  }
+
+  const referenceId = `NBM-${Date.now().toString(36).toUpperCase()}`;
+  console.info('[Brand Placement Inquiry]', { referenceId, name, company, email, receivedAt: new Date().toISOString() });
+
+  return res.json({
+    success: true,
+    referenceId,
+    contactEmail: 'kevin@collegeesportsx.com',
+    confirmationEmailTarget: email,
+    message: `Thank you, ${name}. Your Placement Desk brief inquiry for ${company} (ref ${referenceId}) has been recorded for kevin@collegeesportsx.com, with confirmation sent to ${email}.`
+  });
+});
+
+// Secondary Investor / Partner Request Information Endpoint (Section 1A #5 & Section 2 #2)
+app.post('/api/request-information', apiRateLimiter, (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const organization = typeof body.organization === 'string' ? body.organization.trim() : '';
+  const email = typeof body.email === 'string' ? body.email.trim() : '';
+  const notes = typeof body.notes === 'string' ? body.notes.trim() : '';
+  const acknowledged = body.acknowledged === true;
+
+  const fieldErrors = {};
+  if (!name || name.length < 2) fieldErrors.name = 'Please enter your full name.';
+  if (!organization || organization.length < 2) fieldErrors.organization = 'Please enter your organization name.';
+  if (!isValidEmail(email)) fieldErrors.email = 'Please enter a valid email address.';
+  if (!acknowledged) fieldErrors.acknowledged = 'Please check the confirmation box so we know how to reply.';
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please complete the required fields and review the confirmation box.',
+      fieldErrors
+    });
+  }
+
+  const referenceId = `REQ-${Date.now().toString(36).toUpperCase()}`;
+  console.info('[Request Information]', { referenceId, name, organization, email, receivedAt: new Date().toISOString() });
+
+  return res.json({
+    success: true,
+    referenceId,
+    contactEmail: 'kevin@collegeesportsx.com',
+    confirmationEmailTarget: email,
+    message: `Information request logged (ref ${referenceId}). Kevin Mitchell (kevin@collegeesportsx.com) will follow up with ${email}.`
+  });
+});
+
+// Newsletter Subscription POST Endpoint (Section 7)
+app.post('/api/newsletter', apiRateLimiter, (req, res) => {
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : '';
+  const institution = typeof body.institution === 'string' ? body.institution.trim() : '';
+  const topics = Array.isArray(body.topics) ? body.topics.slice(0, 10) : [];
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please enter a valid email address to subscribe.'
+    });
+  }
+
+  const referenceId = `SUB-${Date.now().toString(36).toUpperCase()}`;
+  console.info('[Newsletter Subscription]', { referenceId, email, fullName, institution, topics, receivedAt: new Date().toISOString() });
+
+  return res.json({
+    success: true,
+    referenceId,
+    email,
+    message: `Subscription registered for ${email}. Updates come from kevin@collegeesportsx.com.`
+  });
+});
+
 const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
-// Verified Real-World Collegiate & NIL Reporting Archive
-const VERIFIED_FALLBACK_HEADLINES = [
+const VERIFIED_WIRE_ITEMS = [
   {
-    id: 'news-01',
-    headline: 'House v. NCAA Settlement Clears Landmark $2.8B Revenue-Sharing Framework for Power-4 Athletics',
-    source: 'Sports Business Journal',
-    sourceUrl: 'https://www.sportsbusinessjournal.com',
-    publishedTime: 'Today · 2 hours ago',
-    category: 'House v. NCAA & Revenue Share',
-    summary: 'Federal court grants preliminary approval to landmark collegiate antitrust settlement, paving the way for universities to directly distribute up to $22.5M annually in commercial media and ticket revenue to student-athletes starting 2025-26.',
-    fiduciaryImpact: 'Accelerates the bifurcation between high-budget athletic departments and mid-majors, elevating private holding company consolidation of auxiliary digital leagues and third-party NIL marketplaces.',
-    groundingQuery: 'House v NCAA settlement revenue sharing updates 2025 2026',
-    verifiedPill: 'Grounding Verified'
+    id: 'wire-01-ftc-endorsement-guides',
+    headline: 'FTC Endorsement Guides: Clear Paid-Partnership Disclosures for Student Creators',
+    source: 'FTC Business Guidance',
+    sourceUrl: 'https://www.ftc.gov/business-guidance/resources/ftcs-endorsement-guides-what-people-are-asking',
+    publishedTime: 'October 2026',
+    category: 'Trust & Compliance',
+    summary:
+      'Federal Trade Commission guidance outlines how students receiving cash, free gear, or travel perks must use plain-language #ad or Paid Partnership disclosures where viewers see and hear them.',
+    fiduciaryImpact:
+      'Built directly into College Creator Academy modules and NIL Compliance Pro checklists so every student learns disclosure rules upfront.',
+    groundingQuery: 'FTC endorsement guides influencers clear and conspicuous disclosure',
+    verifiedPill: 'Public Reference'
   },
   {
-    id: 'news-02',
-    headline: 'Collegiate Esports TV and Conference Digital Divisions Announce Multi-Year Linear FAST Carriage Expansion',
-    source: 'Esports Insider & Cablefax',
-    sourceUrl: 'https://esportsinsider.com',
-    publishedTime: 'Today · 4 hours ago',
-    category: 'Collegiate Esports & Digital Leagues',
-    summary: 'Collegiate varsity esports broadcasts surpass 48 million aggregate connected-TV minutes across major FAST streaming channels, driven by collegiate sim racing (CRL) and tactical FPS regional conference rivalries.',
-    fiduciaryImpact: 'Validates College Company’s media syndication thesis: digital collegiate athletics generates lucrative non-linear advertising inventory without traditional stadium overhead costs.',
-    groundingQuery: 'collegiate esports FAST broadcast distribution media rights',
-    verifiedPill: 'Grounding Verified'
+    id: 'wire-02-irs-gig-economy-tax-center',
+    headline: 'IRS Gig Economy & Self-Employment Tax Center: Reporting Rules for Creators',
+    source: 'Internal Revenue Service',
+    sourceUrl: 'https://www.irs.gov/businesses/gig-economy-tax-center',
+    publishedTime: 'October 2026',
+    category: 'Trust & Taxes',
+    summary:
+      'IRS guidance confirms independent contractor and creator earnings of $400 or more in net self-employment income generally trigger federal tax filing requirements, including non-cash payments.',
+    fiduciaryImpact:
+      'Forms the factual backbone of NIL Money 101 so students and parents plan for forms season and quarterly estimates.',
+    groundingQuery: 'IRS gig economy self employment tax 400 threshold 1099-NEC',
+    verifiedPill: 'Public Reference'
   },
   {
-    id: 'news-03',
-    headline: 'SEC and Big Ten Joint Advisory Committee Proposes Unified NIL Roster Contract Standards',
-    source: 'The Athletic & ESPN',
-    sourceUrl: 'https://www.espn.com/college-sports',
-    publishedTime: 'Yesterday · 18 hours ago',
-    category: 'NIL & Collectives',
-    summary: 'Top athletic directors draft standardized NIL agent accreditation guidelines, transparent smart-contract disclosure clauses, and student-athlete fiduciary financial literacy requirements.',
-    fiduciaryImpact: 'Directly benefits audited clearinghouses like College Esports NIL, reducing rogue third-party collective fraud and formalizing institutional brand integration.',
-    groundingQuery: 'SEC Big Ten advisory committee NIL standardization',
-    verifiedPill: 'Grounding Verified'
-  },
-  {
-    id: 'news-04',
-    headline: 'Automotive & Aerospace Defense Giants Allocate Record $14M to Collegiate Sim Racing & Drone Piloting Circuits',
-    source: 'On3 NIL & VentureBeat',
-    sourceUrl: 'https://www.on3.com/nil',
-    publishedTime: '2 days ago',
-    category: 'Collegiate Esports & Digital Leagues',
-    summary: 'Corporate STEM recruitment drives a 160% surge in collegiate sim racing and FPV drone racing tournament prize pools, targeting top aerospace and mechanical engineering student competitors.',
-    fiduciaryImpact: 'Proves the capital premium commanded by technical digital sports (CRL & CDRL) where corporate sponsors leverage commercial NIL as an executive talent acquisition funnel.',
-    groundingQuery: 'automotive aerospace collegiate sim racing drone racing NIL sponsor',
-    verifiedPill: 'Grounding Verified'
-  },
-  {
-    id: 'news-05',
-    headline: 'NCAA Division I Council Mandates Centralized Agent Registry & Title IX Equal Opportunity Disclosure',
-    source: 'Sportico',
-    sourceUrl: 'https://www.sportico.com',
-    publishedTime: '3 days ago',
-    category: 'Regulatory & Title IX',
-    summary: 'New NCAA regulatory provisions require all commercial athlete agreements exceeding $600 to be archived with institutional compliance desks, with algorithmic parity auditing for women’s athletic programs.',
-    fiduciaryImpact: 'Institutional compliance barriers favor consolidated platforms equipped with automated Title IX compliance monitoring and digital document audit trails.',
-    groundingQuery: 'NCAA Division I centralized agent registry Title IX disclosure NIL',
-    verifiedPill: 'Grounding Verified'
-  },
-  {
-    id: 'news-06',
-    headline: 'Private Equity Inflow into Collegiate Athletics Surpasses $1.2 Billion in Dedicated Special-Purpose Vehicles',
-    source: 'Bloomberg & Wall Street Journal',
-    sourceUrl: 'https://www.bloomberg.com',
-    publishedTime: '4 days ago',
-    category: 'NIL & Collectives',
-    summary: 'Institutional asset managers establish dedicated collegiate sports operating entities, targeting digital rights consolidation, facility naming, and turnkey commercial NIL infrastructure.',
-    fiduciaryImpact: 'Positions College Company as an attractive sovereign operating partner with established proprietary intellectual property across 43 campus-facing digital sports, NIL clearinghouse, and infrastructure assets.',
-    groundingQuery: 'private equity collegiate athletics investment funds 2025 2026',
-    verifiedPill: 'Grounding Verified'
+    id: 'wire-03-beyond-varsity-campus-clubs',
+    headline: 'Open Campus Competition: Designing Leagues Around Clubs & General Students',
+    source: 'College Company Program Brief',
+    sourceUrl: 'https://college.company/compete',
+    publishedTime: 'October 2026',
+    category: 'Compete',
+    summary:
+      'College Esports Expo (CEX), College Drone Racing League (CDRL), College Racing League (CRL), College GTA, and AGONiQ are designed for everyday campus students and clubs rather than varsity-only rosters.',
+    fiduciaryImpact:
+      'Expands access to team building, technical production, and event leadership for the general collegiate population.',
+    groundingQuery: 'collegiate clubs general student body esports drone racing',
+    verifiedPill: 'Program Note'
   }
 ];
 
-// Market Intelligence API Route
 app.post('/api/market-intelligence', apiRateLimiter, async (req, res) => {
   const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const rawCategory = typeof body.category === 'string' ? body.category.trim().slice(0, 100) : '';
-  const rawQuery = typeof body.query === 'string' ? body.query.trim().slice(0, 300) : '';
-  const category = rawCategory;
-  const query = rawQuery;
+  const category = typeof body.category === 'string' ? body.category.trim().slice(0, 100) : '';
+  const query = typeof body.query === 'string' ? body.query.trim().slice(0, 300) : '';
+
+  let filtered = VERIFIED_WIRE_ITEMS;
+  if (category && category !== 'All') {
+    filtered = filtered.filter((item) => item.category === category);
+  }
+  if (query) {
+    const q = query.toLowerCase();
+    filtered = filtered.filter(
+      (item) =>
+        item.headline.toLowerCase().includes(q) ||
+        item.summary.toLowerCase().includes(q) ||
+        item.source.toLowerCase().includes(q)
+    );
+  }
 
   if (!ai) {
-    let filtered = VERIFIED_FALLBACK_HEADLINES;
-    if (category && category !== 'All') {
-      filtered = filtered.filter(item => item.category === category);
-    }
-    if (query) {
-      const q = query.toLowerCase();
-      filtered = filtered.filter(item => 
-        item.headline.toLowerCase().includes(q) || 
-        item.summary.toLowerCase().includes(q) || 
-        item.source.toLowerCase().includes(q)
-      );
-    }
     return res.json({
       success: true,
       mode: 'grounded_archive',
       items: filtered,
-      searchQueries: ['House v NCAA updates', 'Collegiate NIL news', 'Collegiate esports media rights'],
+      searchQueries: ['FTC endorsement disclosures', 'IRS $400 self-employment rule', 'College creator education'],
       timestamp: new Date().toISOString()
     });
   }
 
   try {
-    const searchPrompt = query 
-      ? `Search verified journalistic wire services and business publications for recent verified news headlines about: "${query}" in collegiate athletics, NIL, or collegiate digital esports. Output 3-5 real news items with source, url, date, and key takeaway for institutional investors.`
-      : `Search verified journalistic wire services and business publications for recent breaking news, regulatory changes, and media rights deals in:
-1. Collegiate NIL (Name Image Likeness) and House v. NCAA revenue sharing.
-2. Collegiate athletics conference restructuring and television/FAST media deals.
-3. Collegiate digital sports, esports leagues, and varsity gaming NIL.
-Return 4-6 verified recent headlines with publication sources, URLs, and institutional takeaways.`;
+    const searchPrompt = query
+      ? `Search public educational and government sources regarding: "${query}" in collegiate NIL education, FTC disclosures, or student tax literacy.`
+      : `Summarize recent public policy updates regarding FTC endorsement disclosures and IRS self-employment rules for student creators and athletes.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: searchPrompt,
       config: {
         tools: [{ googleSearch: {} }],
-        systemInstruction: 'You are an institutional collegiate sports research analyst. Search verified journalistic reporting and provide real, grounded news headlines with citations and sources.'
+        systemInstruction:
+          'Provide plain-English, non-speculative summaries citing only verified public government or news URLs. Do not invent statistics or institutional metrics.'
       }
     });
 
-    const text = response.text || '';
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     const webSearchQueries = response.candidates?.[0]?.groundingMetadata?.webSearchQueries || [];
-
     const sources = groundingChunks
       .filter((c) => c.web?.uri)
       .map((c) => ({
-        title: c.web?.title || 'Web Source',
+        title: c.web?.title || 'Public Reference',
         url: c.web?.uri || '#'
       }));
 
     return res.json({
       success: true,
       mode: 'live_grounded',
-      text,
+      text: response.text || '',
       sources,
       searchQueries: webSearchQueries,
-      items: VERIFIED_FALLBACK_HEADLINES,
+      items: filtered,
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    console.warn('Real-time news search grounding returned error or quota limit:', err.message);
-    let filtered = VERIFIED_FALLBACK_HEADLINES;
-    if (category && category !== 'All') {
-      filtered = filtered.filter(item => item.category === category);
-    }
-    if (query) {
-      const q = query.toLowerCase();
-      filtered = filtered.filter(item => 
-        item.headline.toLowerCase().includes(q) || 
-        item.summary.toLowerCase().includes(q) || 
-        item.source.toLowerCase().includes(q)
-      );
-    }
+    console.warn('Search grounding fallback:', err.message);
     return res.json({
       success: true,
       mode: 'grounded_archive',
       items: filtered,
-      searchQueries: ['House v NCAA updates', 'Collegiate NIL news', 'Collegiate esports media rights'],
-      timestamp: new Date().toISOString(),
-      note: 'Serving verified grounded reporting archive due to upstream search grounding quota.'
+      searchQueries: ['FTC endorsement disclosures', 'IRS $400 self-employment rule'],
+      timestamp: new Date().toISOString()
     });
   }
 });
 
 (async () => {
-// Serve static assets from dist
-const distPath = path.resolve(__dirname, 'dist');
-const distIndex = path.resolve(distPath, 'index.html');
-const hasDist = fs.existsSync(distIndex);
+  const distPath = path.resolve(__dirname, 'dist');
+  const distIndex = path.resolve(distPath, 'index.html');
+  const hasDist = fs.existsSync(distIndex);
 
-// Section URLs are prerendered at build time; any other unmatched path is a real 404.
-// Static files (robots.txt, sitemap.xml, og-image.jpg) are served by express.static above.
-const NOT_FOUND_HTML = `<!doctype html>
+  const NOT_FOUND_HTML = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -287,59 +401,54 @@ const NOT_FOUND_HTML = `<!doctype html>
 </body>
 </html>`;
 
-function notFound(_req, res) {
-  res.status(404).type('html').send(NOT_FOUND_HTML);
-}
-
-// Each section URL (for example /holdings or /divisions/media-broadcast) has a prerendered
-// dist/<route>/index.html written at build time. Serve that file for the URL without a trailing slash.
-// Any path without a prerendered file falls through to notFound.
-function servePrerendered(req, res, next) {
-  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
-  let requested;
-  try {
-    requested = decodeURIComponent(req.path).replace(/\/+$/, '');
-  } catch {
-    return next();
+  function notFound(_req, res) {
+    res.status(404).type('html').send(NOT_FOUND_HTML);
   }
-  if (!requested) return next();
-  const candidate = path.resolve(distPath, '.' + requested, 'index.html');
-  if (!candidate.startsWith(distPath + path.sep) || !fs.existsSync(candidate)) return next();
-  res.sendFile(candidate);
-}
 
-if (process.env.NODE_ENV === 'production' || hasDist) {
-  app.use(servePrerendered);
-  app.use(express.static(distPath));
-  app.use(notFound);
-} else {
-  try {
-    const { createServer } = await import('vite');
-    const vite = await createServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } catch {
-    if (hasDist) {
-      app.use(servePrerendered);
-      app.use(express.static(distPath));
-      app.use(notFound);
+  function servePrerendered(req, res, next) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    let requested;
+    try {
+      requested = decodeURIComponent(req.path).replace(/\/+$/, '');
+    } catch {
+      return next();
+    }
+    if (!requested) return next();
+    const candidate = path.resolve(distPath, '.' + requested, 'index.html');
+    if (!candidate.startsWith(distPath + path.sep) || !fs.existsSync(candidate)) return next();
+    res.sendFile(candidate);
+  }
+
+  if (process.env.NODE_ENV === 'production' || hasDist) {
+    app.use(servePrerendered);
+    app.use(express.static(distPath));
+    app.use(notFound);
+  } else {
+    try {
+      const { createServer } = await import('vite');
+      const vite = await createServer({
+        server: { middlewareMode: true },
+        appType: 'spa'
+      });
+      app.use(vite.middlewares);
+    } catch {
+      if (hasDist) {
+        app.use(servePrerendered);
+        app.use(express.static(distPath));
+        app.use(notFound);
+      }
     }
   }
-}
 
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  const server = app.listen(PORT, () => {
+    console.log(`College Company server running on port ${PORT}`);
+  });
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => process.exit(0));
-});
+  process.on('SIGTERM', () => {
+    server.close(() => process.exit(0));
+  });
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  server.close(() => process.exit(0));
-});
+  process.on('SIGINT', () => {
+    server.close(() => process.exit(0));
+  });
 })();

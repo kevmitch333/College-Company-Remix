@@ -477,7 +477,7 @@ export function downloadFinancialPDF(inputs: FinancialModelInputs): void {
   doc.setFontSize(7);
   doc.setTextColor(140, 145, 155);
   doc.text(
-    'CONFIDENTIAL: Prepared for authorized collegiate partners and accredited investors. College Company Holding Group Inc. Boston MA.',
+    'CONFIDENTIAL: Prepared for authorized campus partners and reviewers. College Company, Boston MA.',
     margin,
     pageHeight - 20
   );

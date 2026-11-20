@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useModalA11y } from './public/useModalA11y';
 import { 
   X, 
   ShieldCheck, 
@@ -69,10 +70,14 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
   const [applicantRole, setApplicantRole] = useState<'campus_partner' | 'athletic_director' | 'accredited_investor'>('athletic_director');
   const [selectedTrackTier, setSelectedTrackTier] = useState<AccessTier>(targetTool?.requiredTier || 2);
   const [useCaseReason, setUseCaseReason] = useState('');
-  const [ndaAgreed, setNdaAgreed] = useState(true);
+  const [ndaAgreed, setNdaAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applySuccessMessage, setApplySuccessMessage] = useState<string | null>(null);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useModalA11y(isOpen, onClose, dialogRef, closeBtnRef);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -110,7 +115,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
         roleTitle = 'Athletic Director & Compliance Chair';
       } else if (applicantRole === 'accredited_investor') {
         targetTier = 3;
-        roleTitle = 'Accredited Investor / Fund Partner';
+        roleTitle = 'Executive & Advisor Partner';
       }
 
       if (instantApprove) {
@@ -240,7 +245,12 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Member Sign In and Workspace Access"
+    >
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity"
@@ -248,7 +258,11 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
       />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-4xl bg-[#0D1017] border border-white/10 rounded-lg shadow-2xl overflow-hidden my-6 z-10 flex flex-col max-h-[92vh]">
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative w-full max-w-4xl bg-[#0D1017] border border-white/10 rounded-lg shadow-2xl overflow-hidden my-6 z-10 flex flex-col max-h-[92vh]"
+      >
         
         {/* Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#121622] shrink-0">
@@ -259,7 +273,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-display font-bold text-lg text-white">
-                  College Company Membership Wall
+                  College Company Member Portal
                 </h2>
                 {currentProfile.membershipStatus === 'approved' ? (
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1">
@@ -273,7 +287,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-[#C89B3C]/20 text-[#E8C98B] border border-[#C89B3C]/30 font-semibold">
-                    Permission-Based Access
+                    Partner Sign In
                   </span>
                 )}
               </div>
@@ -283,8 +297,11 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
             </div>
           </div>
           <button
+            ref={closeBtnRef}
+            type="button"
+            aria-label="Close Member Portal Dialog"
             onClick={onClose}
-            className="p-1.5 rounded-sm text-neutral-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -396,7 +413,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                   <span>Institutional Credential Application</span>
                 </div>
                 <p className="text-xs text-neutral-300 font-light leading-relaxed">
-                  To safeguard sensitive collegiate athletics data, legal compliance repositories, and institutional DCF valuation models, access is restricted to verified campus leaders, corporate brand sponsors, athletic directors, and accredited investors.
+                  Partner and coordinator access is available for authorized campus leaders, brand sponsors, and institutional advisors. All public guides, programs, and inquiry forms on College Company are open without an account.
                 </p>
               </div>
 
@@ -427,7 +444,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                       </div>
                       <div className="font-display font-bold text-sm text-white">Campus & Brand</div>
                       <div className="text-[11px] text-neutral-400 font-light mt-1">
-                        43-Brand directory, topology, 400+ campus map, NIL calculator
+                        Program directory, campus coordinator notes, and planning tools
                       </div>
                     </button>
 
@@ -469,9 +486,9 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                         <span className="text-[#68D391] font-bold">Tier 3</span>
                         <DollarSign size={14} />
                       </div>
-                      <div className="font-display font-bold text-sm text-white">Investor & Board</div>
+                      <div className="font-display font-bold text-sm text-white">Executive & Advisor</div>
                       <div className="text-[11px] text-neutral-400 font-light mt-1">
-                        Full DCF models, TAM simulator, AI fiduciary orchestrator
+                        Executive briefings, scenario planning notes, and program oversight
                       </div>
                     </button>
 
@@ -802,7 +819,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
           {activeTab === 'demo' && (
             <div className="space-y-4 text-left">
               <div className="p-4 rounded-md bg-[#121622] border border-white/10 text-xs text-neutral-300 font-light">
-                <span className="font-semibold text-white">Evaluator Workbench:</span> Switch between preset personas to test how the permission wall behaves for unregistered guests, applicants awaiting review, verified partners, athletic directors, and accredited investors.
+                <span className="font-semibold text-white">Evaluator Workbench:</span> Switch between preset personas to review how the partner portal behaves for unregistered guests, applicants in review, campus coordinators, compliance staff, and executive advisors.
               </div>
 
               <div className="grid sm:grid-cols-2 gap-3">
@@ -850,7 +867,7 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                   </div>
                   <div className="font-display font-bold text-sm text-white">Derrick Chen (UT Austin)</div>
                   <div className="text-[11px] text-neutral-400 font-light mt-1">
-                    Unlocks 43-Brand directory, topology, campus map, and NIL calculator.
+                    Unlocks partner directory, topology, campus map, and planning tools.
                   </div>
                 </button>
 
@@ -880,9 +897,9 @@ export const PrivateAccessGateModal: React.FC<PrivateAccessGateModalProps> = ({
                     <span className="text-[#68D391] font-bold">Tier 3 Executive Approved</span>
                     <DollarSign size={14} className="text-[#68D391]" />
                   </div>
-                  <div className="font-display font-bold text-sm text-white">Kevin Mitchell (Syndicate Fiduciary)</div>
+                  <div className="font-display font-bold text-sm text-white">Kevin Mitchell (Executive Lead)</div>
                   <div className="text-[11px] text-neutral-400 font-light mt-1">
-                    Unlocks full DCF financial workbench, TAM scenario simulator, and AI fiduciary orchestrator.
+                    Unlocks executive briefings, scenario planning tools, and program oversight.
                   </div>
                 </button>
               </div>

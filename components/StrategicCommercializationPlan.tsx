@@ -327,7 +327,9 @@ export const ASSET_DISPOSITION_DATA: AssetDispositionItem[] = [
   }
 ];
 
-export const StrategicCommercializationPlan: React.FC = () => {
+export const StrategicCommercializationPlan: React.FC<{
+  onOpenThreeYearRoadmap?: () => void;
+}> = ({ onOpenThreeYearRoadmap }) => {
   // Sub-tabs within the Strategic Plan
   const [activeStrategyView, setActiveStrategyView] = useState<
     'engine' | 'ledger' | 'firstOffer' | 'rightsFirewall' | 'roadmap' | 'briefing'
@@ -1262,17 +1264,29 @@ Executive Summary:
           transition={{ duration: 0.2 }}
           className="space-y-8"
         >
-          <div className="space-y-2">
-            <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-widest">
-              Execution Discipline · Milestone Gates
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <div className="text-xs font-mono text-[#C89B3C] uppercase tracking-widest">
+                Execution Discipline · Milestone Gates
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+                30 / 60 / 90-Day Execution Plan & Explicit Stop-Rules
+              </h2>
+              <p className="text-neutral-400 text-sm max-w-3xl leading-relaxed">
+                Every phase has predetermined validation gates. If milestone metrics are not met, College Company invokes 
+                explicit stop-rules rather than burning capital on speculative software development.
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
-              30 / 60 / 90-Day Execution Plan & Explicit Stop-Rules
-            </h2>
-            <p className="text-neutral-400 text-sm max-w-3xl leading-relaxed">
-              Every phase has predetermined validation gates. If milestone metrics are not met, College Company invokes 
-              explicit stop-rules rather than burning capital on speculative software development.
-            </p>
+            {onOpenThreeYearRoadmap && (
+              <button
+                type="button"
+                onClick={onOpenThreeYearRoadmap}
+                className="px-4 py-2.5 rounded-sm bg-[#C89B3C] hover:bg-[#D4AF37] text-[#090A0C] font-mono text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer self-start md:self-auto whitespace-nowrap"
+              >
+                <span>Inspect 3-Year Institutional Roadmap</span>
+                <ArrowUpRight size={14} />
+              </button>
+            )}
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">

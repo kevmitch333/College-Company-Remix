@@ -30,7 +30,7 @@ export const TIER_DEFINITIONS = [
     name: 'Public Visitor',
     badge: 'Open Access',
     subtitle: 'Public Overview & Consumer Digest',
-    description: 'High-level holding company overview, 4 core operational pillars, public dispatches, and syndicated news wire.',
+    description: 'Public overview of College Company and its four doors (Learn, Compete, Earn, Trust), public guides, and Research Wire.',
     color: '#94A3B8',
     allowedTabs: ['overview', 'editorial'],
     requiresAuth: false
@@ -40,7 +40,7 @@ export const TIER_DEFINITIONS = [
     name: 'Verified Campus & Brand Partner',
     badge: 'Tier 1 Clearance',
     subtitle: 'Network Member & Asset Access',
-    description: 'Complete 43-brand portfolio directory, ecosystem topology, 400+ national campus impact map, and verified peer messaging.',
+    description: 'Program coordinator directory, campus collaboration hub, and partner workspace tools.',
     color: '#38BDF8',
     allowedTabs: ['overview', 'holdings', 'strategy', 'editorial'],
     requiresAuth: true
@@ -57,10 +57,10 @@ export const TIER_DEFINITIONS = [
   },
   {
     tier: 3 as AccessTier,
-    name: 'Accredited Investor & Board Executive',
+    name: 'Executive & Advisor Partner',
     badge: 'Tier 3 Clearance',
-    subtitle: 'Confidential Fiduciary Data Room & AI Engine',
-    description: 'Full financial models, DCF valuations, TAM scenario simulator, cap table disclosures, multi-agent AI fiduciary orchestrator, and PDF/CSV data room export.',
+    subtitle: 'Executive Briefings & Scenario Workspace',
+    description: 'Executive briefings, scenario planning notes, disclosure reviews, and authorized board documents.',
     color: '#68D391',
     allowedTabs: ['overview', 'holdings', 'strategy', 'governance', 'financials', 'editorial', 'orchestrator'],
     requiresAuth: true
@@ -97,28 +97,28 @@ export const MEMBERSHIP_TOOLS_CATALOG: MembershipTool[] = [
     requiredTier: 1,
     targetTab: 'strategy',
     targetSubTab: 'nil_calculator',
-    description: 'Live interactive compensation simulator computing fair market value, NCAA statutory disclosures, and Title IX distribution parity.',
+    description: 'Live interactive educational simulator exploring disclosure checklists and program budgeting.',
     badge: 'Tier 1 Clearance',
     highlights: [
-      'Conference & Division market rate benchmarks',
-      '100% pre-funded statutory brand escrow calculator',
-      'Real-time automated state disclosure reports'
+      'Educational program budgeting references',
+      'Disclosed-fee Placement Desk rules',
+      'Standardized reporting checklists'
     ]
   },
   {
     id: 'holding-directory-map',
-    name: '43-Brand Portfolio Directory & Interactive Campus Map',
-    shortName: '43-Brand Directory & Map',
+    name: 'Portfolio & Campus Coordinator Directory',
+    shortName: 'Portfolio Directory & Map',
     category: 'Portfolio & Network',
     requiredTier: 1,
     targetTab: 'holdings',
     targetSubTab: 'directory',
-    description: 'Searchable database of all 43 active holdings, ecosystem topology graphs, and geospatial footprint across 400+ national universities.',
+    description: 'Searchable directory of properties in development and campus partner coordinators.',
     badge: 'Tier 1 Clearance',
     highlights: [
-      'Filterable by 4 institutional clusters & division',
-      'Interactive 3D topological connection graphs',
-      'Campus stadium venue blueprints and specs'
+      'Filterable by Learn, Compete, Earn, and Trust',
+      'Interactive program collaboration notes',
+      'Campus club coordination specifications'
     ]
   },
   {
@@ -148,9 +148,9 @@ export const MEMBERSHIP_TOOLS_CATALOG: MembershipTool[] = [
     description: 'Live broadcast feed tracking collegiate brand activation budgets, open RFP opportunities, and trending campus sponsorship segments.',
     badge: 'Tier 1 Clearance',
     highlights: [
-      'Live sponsor bid tracking ($25k-$250k contracts)',
-      'Immediate push notification alerts on matching criteria',
-      'Escrow pre-funded verification seals'
+      'Disclosed sponsor briefs and placement guidelines',
+      'Standardized campaign disclosure notes',
+      'Written-term verification checklists'
     ]
   },
   {
@@ -171,18 +171,18 @@ export const MEMBERSHIP_TOOLS_CATALOG: MembershipTool[] = [
   },
   {
     id: 'dcf-financial-modeler',
-    name: 'Institutional DCF Scenario Modeler & TAM Simulator',
-    shortName: 'Financial Modeler & Data Room',
+    name: 'Scenario Planning & Executive Briefing Room',
+    shortName: 'Executive Briefing Room',
     category: 'Financial & Board',
     requiredTier: 3,
     targetTab: 'financials',
     actionModal: 'financial-report',
-    description: 'Interactive financial workbench projecting EBITDA multiples, TAM penetration scenarios, and downloadable fiduciary data room reports.',
+    description: 'Authorized planning workbook for reviewing scenario assumptions and downloadable executive summaries.',
     badge: 'Tier 3 Clearance',
     highlights: [
-      'Interactive Conservative / Baseline / Aggressive scenarios',
-      'Dynamic WACC discount rate sensitivity curves',
-      'Fiduciary PDF & CSV data room export engine'
+      'Conservative / Baseline / Growth planning scenarios',
+      'Program unit-economics worksheets',
+      'Executive summary CSV & briefing exports'
     ]
   },
   {
@@ -247,7 +247,7 @@ export const DEMO_PRESET_PROFILES: Record<AccessTier, AccessProfile> = {
     roleTitle: 'Managing Partner & Fiduciary Lead',
     roleCategory: 'accredited_investor',
     displayName: 'Kevin Mitchell',
-    organization: 'College Company Holding Group & Syndicate',
+    organization: 'College Company',
     email: 'kevin@collegeesportsx.com',
     verified: true,
     avatarColor: 'from-emerald-600 to-teal-500',
@@ -375,7 +375,7 @@ export function getRequiredTierForTab(tab: string): { tier: AccessTier; label: s
       return { tier: 2, label: 'Tier 2 (Athletic Directorate & Legal)' };
     case 'financials':
     case 'orchestrator':
-      return { tier: 3, label: 'Tier 3 (Accredited Investor & Executive)' };
+      return { tier: 3, label: 'Tier 3 (Executive & Advisor)' };
     default:
       return { tier: 0, label: 'Public Access' };
   }

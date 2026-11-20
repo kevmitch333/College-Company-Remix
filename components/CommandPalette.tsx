@@ -1,686 +1,268 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  Search, 
-  X, 
-  ArrowRight, 
-  SlidersHorizontal, 
-  Building2, 
-  ShieldCheck, 
-  DollarSign, 
-  FileText, 
-  BarChart3, 
-  Radio, 
-  Scale, 
-  Layers, 
-  MapPin, 
-  Sparkles,
-  Trophy,
-  ExternalLink,
+import React, { useState, useMemo, useRef } from 'react';
+import {
+  Search,
+  X,
+  ArrowRight,
   BookOpen,
-  Briefcase,
-  Users,
-  Mail,
-  BrainCircuit,
-  Cpu,
-  Tv,
-  TrendingUp,
-  Rss,
-  Lock
+  Trophy,
+  DollarSign,
+  ShieldCheck,
+  Building2,
+  Compass,
+  Radio,
 } from 'lucide-react';
-import { AccessProfile, AccessTier, PUBLIC_SPOTLIGHT_BRAND_NAMES } from '../src/utils/accessTiers';
+import { PROGRAMS, DOOR_META, DoorKey, ProgramStatus } from '../src/data/programs';
+import { RESEARCH_WIRE_ITEMS } from '../src/rssData';
+import { useModalA11y } from './public/useModalA11y';
 
-export interface CommandItem {
+export interface SearchIndexItem {
   id: string;
   title: string;
-  subtitle: string;
-  category: 'Holdings' | 'Financials' | 'Strategy' | 'Governance & Rules' | 'Intelligence' | 'Audience Pathways' | 'AI Orchestrator';
-  action: () => void;
-  badge?: string;
-  icon: React.ReactNode;
-  requiredTier?: AccessTier;
-  toolId?: string;
+  doorOrSection: 'Learn' | 'Compete' | 'Earn' | 'Trust' | 'About & Info' | 'Research Wire';
+  description: string;
+  status?: ProgramStatus;
+  path: string;
+  hash?: string;
 }
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-  portfolioData: any[];
-  userProfile: AccessProfile;
-  onSelectBrand: (brand: any) => void;
-  onNavigate: (tab: 'overview' | 'holdings' | 'strategy' | 'financials' | 'governance' | 'editorial' | 'orchestrator', subTab?: string) => void;
-  onOpenModal: (modal: 'prospectus' | 'memo' | 'nil_alerts' | 'network' | 'compliance' | 'orchestrator' | 'rss') => void;
-  onRequestAccess: (toolId?: string) => void;
+  onNavigatePath: (path: string, hash?: string) => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
-  portfolioData,
-  userProfile,
-  onSelectBrand,
-  onNavigate,
-  onOpenModal,
-  onRequestAccess
+  onNavigatePath,
 }) => {
-  const hasAccess = (reqTier: AccessTier = 0) =>
-    reqTier === 0 || (userProfile.membershipStatus === 'approved' && userProfile.tier >= reqTier);
   const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedDoor, setSelectedDoor] = useState<string>('All');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Auto-focus input when opened
-  useEffect(() => {
-    if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-    }
-  }, [isOpen]);
+  useModalA11y(isOpen, onClose, dialogRef, inputRef);
 
-  // Global keyboard shortcuts (Cmd+K / Ctrl+K and Escape)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        if (isOpen) {
-          onClose();
-        } else {
-          // Trigger open via parent or window event
-        }
-      }
-      if (e.key === 'Escape' && isOpen) {
-        e.preventDefault();
-        onClose();
-      }
-    };
+  const allItems: SearchIndexItem[] = useMemo(() => {
+    const list: SearchIndexItem[] = [];
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Build searchable index of all tools, holdings, rules, and chapters
-  const allItems: CommandItem[] = useMemo(() => {
-    const items: CommandItem[] = [];
-
-    // 1. Audience Pathways
-    items.push(
-      {
-        id: 'aud-universities',
-        title: 'Pathway: Universities & Athletic Directors',
-        subtitle: 'Amateurism shield, Title IX alignment, 400+ campus footprint & 6-week validation sprint',
-        category: 'Audience Pathways',
-        requiredTier: 1,
-        toolId: 'holding-directory-map',
-        action: () => {
-          onNavigate('holdings', 'map');
-          onClose();
-        },
-        badge: 'Universities',
-        icon: <Building2 size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'aud-investors',
-        title: 'Pathway: Institutional Investors & Allocators',
-        subtitle: 'Series A mandate, $1.4B TAM simulator, capital structure & executive memorandum',
-        category: 'Audience Pathways',
-        requiredTier: 3,
-        toolId: 'dcf-financial-modeler',
-        action: () => {
-          onNavigate('financials', 'simulator');
-          onClose();
-        },
-        badge: 'Investors',
-        icon: <DollarSign size={16} className="text-[#68D391]" />
-      },
-      {
-        id: 'aud-brands',
-        title: 'Pathway: Fortune 500 Brands & NIL Agencies',
-        subtitle: '14,000+ rostered student-athletes, verified escrow clearinghouse & FAST television reach',
-        category: 'Audience Pathways',
-        requiredTier: 1,
-        toolId: 'nil-opportunity-radar',
-        action: () => {
-          onOpenModal('nil_alerts');
-          onClose();
-        },
-        badge: 'Brands',
-        icon: <Trophy size={16} className="text-[#38BDF8]" />
-      },
-      {
-        id: 'aud-athletes',
-        title: 'Pathway: Student-Athletes & Creators',
-        subtitle: 'Annual NIL monetization calculator, protected scholarship status & escrow payouts',
-        category: 'Audience Pathways',
-        requiredTier: 1,
-        toolId: 'student-nil-calc',
-        action: () => {
-          onNavigate('strategy', 'nil_calculator');
-          onClose();
-        },
-        badge: 'Athletes',
-        icon: <Sparkles size={16} className="text-[#F6AD55]" />
-      }
-    );
-
-    // 2. Core Quantitative Tools & Simulators
-    items.push(
-      {
-        id: 'tool-tam-sim',
-        title: 'TAM & Yield Simulator',
-        subtitle: 'Interactive quantitative model projecting campus licensing, NIL take-rate & FAST revenues',
-        category: 'Financials',
-        requiredTier: 3,
-        toolId: 'dcf-financial-modeler',
-        action: () => {
-          onNavigate('financials', 'simulator');
-          onClose();
-        },
-        badge: 'Interactive Tool',
-        icon: <SlidersHorizontal size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'tool-nil-analytics',
-        title: 'NIL Analytics & Liquidity Trends',
-        subtitle: 'Historical growth curves, deal volume trends & sport-by-sport sponsorship benchmarks',
-        category: 'Financials',
-        requiredTier: 3,
-        toolId: 'dcf-financial-modeler',
-        action: () => {
-          onNavigate('financials', 'nil_analytics');
-          onClose();
-        },
-        badge: 'Data Visual',
-        icon: <BarChart3 size={16} className="text-[#68D391]" />
-      },
-      {
-        id: 'tool-nil-calc',
-        title: 'Student-Athlete NIL Valuation Calculator',
-        subtitle: 'Interactive earnings model by conference, varsity tier, and social following engagement',
-        category: 'Strategy',
-        requiredTier: 1,
-        toolId: 'student-nil-calc',
-        action: () => {
-          onNavigate('strategy', 'nil_calculator');
-          onClose();
-        },
-        badge: 'Calculator',
-        icon: <DollarSign size={16} className="text-[#38BDF8]" />
-      }
-    );
-
-    // 3. Geographic Maps & Ecosystem Visualizations
-    items.push(
-      {
-        id: 'vis-campus-map',
-        title: 'National Campus Footprint & Conference Map',
-        subtitle: 'Interactive D3 map of 400+ collegiate institutions, Big Ten, SEC, ACC & state metrics',
-        category: 'Holdings',
-        requiredTier: 1,
-        toolId: 'holding-directory-map',
-        action: () => {
-          onNavigate('holdings', 'map');
-          onClose();
-        },
-        badge: 'Interactive Map',
-        icon: <MapPin size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'vis-topology',
-        title: 'Operating Holding Ecosystem Topology',
-        subtitle: 'Interactive hierarchical architecture map across all 4 synergistic operating divisions',
-        category: 'Holdings',
-        requiredTier: 1,
-        toolId: 'holding-directory-map',
-        action: () => {
-          onNavigate('holdings', 'topology');
-          onClose();
-        },
-        badge: 'Architecture',
-        icon: <Layers size={16} className="text-[#A78BFA]" />
-      }
-    );
-
-    // 4. Strategic Plan Chapters (v1.0)
-    items.push(
-      {
-        id: 'strat-engine',
-        title: 'Strategic Plan: 4-Function Operating Engine',
-        subtitle: 'Rights aggregation, production syndication, commercial clearinghouse & campus software',
-        category: 'Strategy',
-        requiredTier: 1,
-        toolId: 'holding-directory-map',
-        action: () => {
-          onNavigate('strategy', 'plan');
-          onClose();
-        },
-        badge: 'Strategy v1.0',
-        icon: <Layers size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'strat-disposition',
-        title: '43-Asset Commercial Disposition Matrix',
-        subtitle: 'Monetization posture, stage maturity, and operating priority across all 43 digital brands',
-        category: 'Strategy',
-        requiredTier: 1,
-        toolId: 'holding-directory-map',
-        action: () => {
-          onNavigate('strategy', 'plan');
-          onClose();
-        },
-        badge: 'Portfolio Matrix',
-        icon: <Briefcase size={16} className="text-[#E8C98B]" />
-      },
-      {
-        id: 'strat-campus-sprint',
-        title: '6-Week Campus Program Sprint Unit Economics',
-        subtitle: 'Phased rollout protocol from varsity charter to commercial sponsor integration',
-        category: 'Strategy',
-        requiredTier: 1,
-        toolId: 'holding-directory-map',
-        action: () => {
-          onNavigate('strategy', 'plan');
-          onClose();
-        },
-        badge: 'Unit Economics',
-        icon: <Sparkles size={16} className="text-[#68D391]" />
-      },
-      {
-        id: 'strat-firewall',
-        title: 'Educational & Rights Firewall Protocol',
-        subtitle: 'Fiduciary boundary isolating commercial brand deals from student academic records',
-        category: 'Strategy',
-        requiredTier: 1,
-        toolId: 'holding-directory-map',
-        action: () => {
-          onNavigate('strategy', 'plan');
-          onClose();
-        },
-        badge: 'Compliance Shield',
-        icon: <ShieldCheck size={16} className="text-[#38BDF8]" />
-      }
-    );
-
-    // 5. Governance & Institutional Fiduciary
-    items.push(
-      {
-        id: 'gov-compliance-dashboard',
-        title: 'Institutional Compliance & Bylaw Alignment Dashboard',
-        subtitle: 'Automated regulatory monitoring, live Proprietary AI Engine telemetry & 50-state bylaw matrix',
-        category: 'Governance & Rules',
-        requiredTier: 2,
-        toolId: 'regulatory-audit-table',
-        action: () => {
-          onNavigate('governance', 'compliance-dashboard');
-          onClose();
-        },
-        badge: 'Automated Engine',
-        icon: <ShieldCheck size={16} className="text-emerald-400" />
-      },
-      {
-        id: 'gov-rules-repo',
-        title: 'Athletic Rules & Compliance Repository',
-        subtitle: 'Codified NCAA Bylaw 14.2, NAIA Eligibility, Title IX equity protocols & state NIL mandates',
-        category: 'Governance & Rules',
-        requiredTier: 2,
-        toolId: 'regulatory-audit-table',
-        action: () => {
-          onNavigate('governance', 'repository');
-          onClose();
-        },
-        badge: 'Legal Bylaws',
-        icon: <Scale size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'gov-risk-matrix',
-        title: 'Institutional Risk Factors & Mitigation Matrix',
-        subtitle: 'Analysis of publisher licensing, antitrust legislation, and macroeconomic mitigations',
-        category: 'Governance & Rules',
-        requiredTier: 2,
-        toolId: 'regulatory-audit-table',
-        action: () => {
-          onNavigate('governance', 'risks');
-          onClose();
-        },
-        badge: 'Risk Matrix',
-        icon: <ShieldCheck size={16} className="text-[#E53E3E]" />
-      },
-      {
-        id: 'gov-memo',
-        title: 'Executive Summary Memorandum & Charter',
-        subtitle: 'Complete institutional briefing document authored by Kevin Mitchell, Managing Member',
-        category: 'Governance & Rules',
-        requiredTier: 2,
-        toolId: 'regulatory-audit-table',
-        action: () => {
-          onNavigate('governance', 'memo');
-          onClose();
-        },
-        badge: 'Executive Brief',
-        icon: <FileText size={16} className="text-[#E8C98B]" />
-      }
-    );
-
-    // 6. Intelligence & Research
-    items.push(
-      {
-        id: 'intel-market-wire',
-        title: 'Live Grounded Market Intelligence Wire',
-        subtitle: 'Real-time research wire tracking House v. NCAA, conference media deals & FAST expansion',
-        category: 'Intelligence',
-        action: () => {
-          onNavigate('editorial', 'market_wire');
-          onClose();
-        },
-        badge: 'Live Wire',
-        icon: <Radio size={16} className="text-[#68D391]" />
-      },
-      {
-        id: 'intel-articles',
-        title: 'Thought Leadership Articles & Editorial',
-        subtitle: 'Executive essays on the structural realignment of college athletics and creator capital',
-        category: 'Intelligence',
-        action: () => {
-          onNavigate('editorial', 'editorial');
-          onClose();
-        },
-        badge: 'Publications',
-        icon: <BookOpen size={16} className="text-[#38BDF8]" />
-      },
-      {
-        id: 'intel-newsletter',
-        title: 'Subscribe to Weekly Market Intelligence Briefing',
-        subtitle: 'Weekly institutional updates delivered Mondays at 7:00 AM EST to athletic directors & investors',
-        category: 'Intelligence',
-        action: () => {
-          onNavigate('editorial', 'newsletter');
-          onClose();
-        },
-        badge: 'Weekly Dispatch',
-        icon: <Mail size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'intel-rss',
-        title: 'Subscribe to Intelligence & Market Updates via RSS Feed',
-        subtitle: 'Syndicated RSS 2.0 / Atom feed for news readers (Feedly, Inoreader, Apple News, NetNewsWire)',
-        category: 'Intelligence',
-        action: () => {
-          onNavigate('editorial', 'editorial');
-          onOpenModal('rss');
-          onClose();
-        },
-        badge: 'RSS 2.0 Feed',
-        icon: <Rss size={16} className="text-[#E8C98B]" />
-      }
-    );
-
-    // 7. Modals & Quick Dialogs
-    items.push(
-      {
-        id: 'modal-prospectus',
-        title: 'Request Series A Institutional Prospectus',
-        subtitle: 'Confidential capital allocation brief, DCF model & data room credentialing form',
-        category: 'Audience Pathways',
-        requiredTier: 0,
-        action: () => {
-          onOpenModal('prospectus');
-          onClose();
-        },
-        badge: 'Direct Action',
-        icon: <FileText size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'modal-nil-radar',
-        title: 'Inspect NIL Opportunity Radar',
-        subtitle: 'Real-time commercial sponsorship categories, brand bids & active deal requests',
-        category: 'Financials',
-        requiredTier: 1,
-        toolId: 'nil-opportunity-radar',
-        action: () => {
-          onOpenModal('nil_alerts');
-          onClose();
-        },
-        badge: 'Member Tool',
-        icon: <Radio size={16} className="text-[#E8C98B]" />
-      },
-      {
-        id: 'modal-network',
-        title: 'Accredited Member Directory & Secure Messaging',
-        subtitle: 'Direct communication portal with managing directors, advisors and partner campuses',
-        category: 'Audience Pathways',
-        requiredTier: 1,
-        toolId: 'member-peer-network',
-        action: () => {
-          onOpenModal('network');
-          onClose();
-        },
-        badge: 'Member Tool',
-        icon: <Users size={16} className="text-[#68D391]" />
-      },
-      // 8. Conversational AI Orchestration & Autonomous Sub-Agents
-      {
-        id: 'ai-orchestrator',
-        title: 'Launch Autonomous AI Orchestration Mesh',
-        subtitle: 'Multi-agent supervisor console routing inquiries across 400+ universities with native reasoning',
-        category: 'AI Orchestrator',
-        requiredTier: 3,
-        toolId: 'ai-orchestrator',
-        action: () => {
-          onNavigate('orchestrator');
-          onClose();
-        },
-        badge: 'AI Core',
-        icon: <BrainCircuit size={16} className="text-[#C89B3C]" />
-      },
-      {
-        id: 'ai-blueprint',
-        title: 'AI Architecture & Deployment Blueprint (400 Campuses)',
-        subtitle: 'Technical specifications: Supervisor Ingress, Context Caching, Google Search Grounding & Tool Sandbox',
-        category: 'AI Orchestrator',
-        requiredTier: 3,
-        toolId: 'ai-orchestrator',
-        action: () => {
-          onNavigate('orchestrator', 'blueprint');
-          onClose();
-        },
-        badge: 'Architecture',
-        icon: <Layers size={16} className="text-[#38BDF8]" />
-      },
-      {
-        id: 'ai-nil-agent',
-        title: 'Dispatch Agent-NIL · Clearinghouse & Legal Compliance',
-        subtitle: 'Automated student contract audit, Title IX parity check & House v. NCAA $22M cap evaluation',
-        category: 'AI Orchestrator',
-        requiredTier: 3,
-        toolId: 'ai-orchestrator',
-        action: () => {
-          onNavigate('orchestrator', 'nil');
-          onClose();
-        },
-        badge: 'Sub-Agent',
-        icon: <Scale size={16} className="text-[#68D391]" />
-      },
-      {
-        id: 'ai-tournament-agent',
-        title: 'Dispatch Agent-Tournament · Circuit Operations',
-        subtitle: 'CDRL drone telemetry, CRL sim-racing ruleset, anti-cheat dispute arbitration & eligibility',
-        category: 'AI Orchestrator',
-        requiredTier: 3,
-        toolId: 'ai-orchestrator',
-        action: () => {
-          onNavigate('orchestrator', 'tournament');
-          onClose();
-        },
-        badge: 'Sub-Agent',
-        icon: <Cpu size={16} className="text-[#38BDF8]" />
-      },
-      {
-        id: 'ai-broadcast-agent',
-        title: 'Dispatch Agent-Broadcast · FAST Syndication & Connected TV',
-        subtitle: '24/7 linear EPG generation, $18–$24 CPM advertising packaging & viewer minute telemetry',
-        category: 'AI Orchestrator',
-        requiredTier: 3,
-        toolId: 'ai-orchestrator',
-        action: () => {
-          onNavigate('orchestrator', 'broadcast');
-          onClose();
-        },
-        badge: 'Sub-Agent',
-        icon: <Tv size={16} className="text-[#F6AD55]" />
-      },
-      {
-        id: 'ai-capital-agent',
-        title: 'Dispatch Agent-Capital · Fiduciary IR & DCF Simulator',
-        subtitle: 'Series A DCF scenario simulation, 43-brand consolidation economics & 84.6% margin modeling',
-        category: 'AI Orchestrator',
-        requiredTier: 3,
-        toolId: 'ai-orchestrator',
-        action: () => {
-          onNavigate('orchestrator', 'capital');
-          onClose();
-        },
-        badge: 'Sub-Agent',
-        icon: <TrendingUp size={16} className="text-[#E8C98B]" />
-      }
-    );
-
-    // 8. All 43 Portfolio Brand Holdings (4 Public Spotlights open at Tier 0; remaining 39 require Tier 1)
-    portfolioData.forEach((brand) => {
-      const isPublicSpotlight = PUBLIC_SPOTLIGHT_BRAND_NAMES.includes(brand.name);
-      items.push({
-        id: `brand-${brand.id}`,
-        title: brand.name,
-        subtitle: `${brand.division} · ${brand.tagline || brand.thesis?.slice(0, 75)}`,
-        category: 'Holdings',
-        requiredTier: isPublicSpotlight ? 0 : 1,
-        toolId: isPublicSpotlight ? undefined : 'holding-directory-map',
-        action: () => {
-          onSelectBrand(brand);
-          onClose();
-        },
-        badge: isPublicSpotlight ? 'Public Spotlight' : (brand.cluster || brand.status),
-        icon: <Briefcase size={16} className="text-[#C89B3C]" />
+    // 1. The 4 Doors
+    (['learn', 'compete', 'earn', 'trust'] as DoorKey[]).forEach((key) => {
+      const door = DOOR_META[key];
+      list.push({
+        id: `door-${key}`,
+        title: `${door.label} Door Overview`,
+        doorOrSection: door.label,
+        description: door.headline,
+        path: door.path,
       });
     });
 
-    return items;
-  }, [portfolioData, onNavigate, onSelectBrand, onOpenModal, onClose]);
+    // 2. All 14 Real Program Pages
+    PROGRAMS.forEach((p) => {
+      list.push({
+        id: `prog-${p.id}`,
+        title: p.name,
+        doorOrSection: p.doorLabel,
+        description: p.oneLine,
+        status: p.status,
+        path: p.path,
+      });
+    });
 
-  // Filter items based on query and category
+    // 3. Key Site Pages
+    list.push(
+      {
+        id: 'page-institutions',
+        title: 'For Institutions & Partners',
+        doorOrSection: 'About & Info',
+        description: 'Micro-course cohorts, open club competitions, and campus pilot options.',
+        path: '/institutions',
+      },
+      {
+        id: 'page-investors',
+        title: 'Investor Relations — Request Information',
+        doorOrSection: 'About & Info',
+        description: 'Secondary path for background information inquiries.',
+        path: '/institutions/investors',
+      },
+      {
+        id: 'page-about',
+        title: 'About College Company',
+        doorOrSection: 'About & Info',
+        description: 'Founded and led by Kevin Mitchell in Boston, Massachusetts.',
+        path: '/about',
+      },
+      {
+        id: 'page-contact',
+        title: 'Contact Us',
+        doorOrSection: 'About & Info',
+        description: 'Email kevin@collegeesportsx.com or send a message without an account.',
+        path: '/contact',
+      },
+      {
+        id: 'page-research-wire',
+        title: 'Research Wire — Articles & Guides',
+        doorOrSection: 'Research Wire',
+        description: 'Plain-English guides on creator careers, NIL taxes, and Student-First sponsorships.',
+        path: '/intelligence',
+      },
+      {
+        id: 'page-market-wire',
+        title: 'Market Wire — Policy & Program Updates',
+        doorOrSection: 'Research Wire',
+        description: 'Reference briefs on FTC disclosure rules, IRS thresholds, and campus clubs.',
+        path: '/intelligence/market-wire',
+      },
+      {
+        id: 'page-privacy',
+        title: 'Privacy Policy',
+        doorOrSection: 'About & Info',
+        description: 'How College Company handles contact and update requests.',
+        path: '/privacy',
+      },
+      {
+        id: 'page-terms',
+        title: 'Terms of Use',
+        doorOrSection: 'About & Info',
+        description: 'Educational disclaimers and development-preview terms.',
+        path: '/terms',
+      }
+    );
+
+    // 4. Individual Research Wire Items
+    RESEARCH_WIRE_ITEMS.forEach((item) => {
+      const targetPath = item.kind === 'article' ? '/intelligence' : '/intelligence/market-wire';
+      list.push({
+        id: `wire-${item.id}`,
+        title: item.title,
+        doorOrSection: 'Research Wire',
+        description: item.subtitle,
+        path: targetPath,
+        hash: item.id,
+      });
+    });
+
+    return list;
+  }, []);
+
+  const categories = ['All', 'Learn', 'Compete', 'Earn', 'Trust', 'About & Info', 'Research Wire'];
+
   const filteredItems = useMemo(() => {
-    let result = allItems;
-
-    if (selectedCategory !== 'All') {
-      result = result.filter(item => item.category === selectedCategory);
-    }
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item => 
+    const q = query.trim().toLowerCase();
+    return allItems.filter((item) => {
+      const matchesDoor = selectedDoor === 'All' || item.doorOrSection === selectedDoor;
+      const matchesQuery =
+        !q ||
         item.title.toLowerCase().includes(q) ||
-        item.subtitle.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q) ||
-        (item.badge && item.badge.toLowerCase().includes(q))
-      );
-    }
+        item.description.toLowerCase().includes(q) ||
+        item.doorOrSection.toLowerCase().includes(q) ||
+        (item.status && item.status.toLowerCase().includes(q));
+      return matchesDoor && matchesQuery;
+    });
+  }, [allItems, query, selectedDoor]);
 
-    return result;
-  }, [allItems, query, selectedCategory]);
-
-  const executeItem = (item: CommandItem) => {
-    const reqTier = item.requiredTier ?? 0;
-    if (!hasAccess(reqTier)) {
-      onClose();
-      onRequestAccess(item.toolId);
-      return;
-    }
-    item.action();
+  const selectResult = (item: SearchIndexItem) => {
+    onClose();
+    onNavigatePath(item.path, item.hash);
   };
 
-  // Handle keyboard navigation inside the list
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleListKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex(prev => (prev < filteredItems.length - 1 ? prev + 1 : 0));
+      setSelectedIndex((prev) => (filteredItems.length === 0 ? 0 : (prev + 1) % filteredItems.length));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : filteredItems.length - 1));
+      setSelectedIndex((prev) =>
+        filteredItems.length === 0 ? 0 : (prev - 1 + filteredItems.length) % filteredItems.length
+      );
     } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (filteredItems[selectedIndex]) {
-        executeItem(filteredItems[selectedIndex]);
+      const activeEl = document.activeElement;
+      if (activeEl === inputRef.current && filteredItems[selectedIndex]) {
+        e.preventDefault();
+        selectResult(filteredItems[selectedIndex]);
       }
     }
   };
 
-  // Scroll active item into view
-  useEffect(() => {
-    if (listRef.current) {
-      const activeElement = listRef.current.children[selectedIndex] as HTMLElement;
-      if (activeElement) {
-        activeElement.scrollIntoView({ block: 'nearest' });
-      }
+  const getSectionIcon = (section: SearchIndexItem['doorOrSection']) => {
+    switch (section) {
+      case 'Learn':
+        return <BookOpen size={16} className="text-[#C89B3C]" />;
+      case 'Compete':
+        return <Trophy size={16} className="text-[#38BDF8]" />;
+      case 'Earn':
+        return <DollarSign size={16} className="text-[#68D391]" />;
+      case 'Trust':
+        return <ShieldCheck size={16} className="text-[#E8C98B]" />;
+      case 'Research Wire':
+        return <Radio size={16} className="text-[#E8C98B]" />;
+      default:
+        return <Compass size={16} className="text-neutral-300" />;
     }
-  }, [selectedIndex]);
+  };
 
   if (!isOpen) return null;
 
-  const categories = ['All', 'Audience Pathways', 'Holdings', 'Strategy', 'Governance & Rules', 'Financials', 'AI Orchestrator', 'Intelligence'];
-
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150"
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 px-4 bg-black/80 backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search College Company"
     >
-      <div 
-        className="w-full max-w-2xl bg-[#0F1218] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[82vh]"
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleKeyDown}
+        onKeyDown={handleListKeyDown}
+        className="w-full max-w-2xl bg-[#0F1218] border border-white/15 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[84vh]"
       >
         {/* Search Input Bar */}
-        <div className="p-4 border-b border-white/[0.08] flex items-center gap-3 bg-[#131722]">
+        <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-[#131722]">
           <Search size={18} className="text-[#C89B3C] shrink-0" />
+          <label htmlFor="site-search-input" className="sr-only">
+            Search programs, courses, leagues, and guides
+          </label>
           <input
             ref={inputRef}
+            id="site-search-input"
             type="text"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Search 43 holdings, NIL calculator, compliance rules, or research..."
-            className="w-full bg-transparent text-white text-sm placeholder-neutral-500 focus:outline-none font-sans"
+            placeholder="Search Learn, Compete, Earn, Trust, or pages..."
+            className="w-full min-h-[44px] bg-transparent text-white text-base placeholder-neutral-400 focus:outline-none"
           />
-          {query ? (
-            <button 
-              onClick={() => { setQuery(''); inputRef.current?.focus(); }}
-              className="p-1 hover:bg-white/10 rounded text-neutral-400 hover:text-white transition-colors"
-            >
-              <X size={15} />
-            </button>
-          ) : (
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-neutral-400 bg-white/5 border border-white/10 rounded">
-              ESC
-            </kbd>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close search"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Filter Categories Horizontal Bar */}
-        <div className="px-4 py-2 border-b border-white/[0.06] bg-[#0C0E14] flex items-center gap-1.5 overflow-x-auto text-xs font-mono no-scrollbar">
+        {/* Category Tabs */}
+        <div className="px-4 py-2 border-b border-white/10 bg-[#0C0E14] flex items-center gap-1.5 overflow-x-auto">
           {categories.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => {
-                setSelectedCategory(cat);
+                setSelectedDoor(cat);
                 setSelectedIndex(0);
               }}
-              className={`px-2.5 py-1 rounded-sm whitespace-nowrap transition-colors cursor-pointer ${
-                selectedCategory === cat
-                  ? 'bg-[#C89B3C] text-[#090A0C] font-semibold'
-                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              className={`min-h-[38px] px-3 py-1 rounded-sm text-xs font-mono whitespace-nowrap transition-colors cursor-pointer ${
+                selectedDoor === cat
+                  ? 'bg-[#C89B3C] text-[#090A0C] font-bold'
+                  : 'text-neutral-300 hover:text-white hover:bg-white/5'
               }`}
             >
               {cat}
@@ -688,83 +270,62 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           ))}
         </div>
 
-        {/* Search Results List */}
-        <div ref={listRef} className="overflow-y-auto divide-y divide-white/[0.04] p-2 space-y-1">
+        {/* Search Results */}
+        <div ref={listRef} className="overflow-y-auto divide-y divide-white/[0.06] p-2 space-y-1">
           {filteredItems.length === 0 ? (
-            <div className="py-12 text-center text-neutral-500 text-xs font-mono">
-              No matching assets, tools, or bylaws found for "{query}".
+            <div className="py-10 text-center text-neutral-300 text-base">
+              No programs or pages matched &ldquo;{query}&rdquo;.
             </div>
           ) : (
             filteredItems.map((item, idx) => {
               const isSelected = idx === selectedIndex;
-              const reqTier = item.requiredTier ?? 0;
-              const isLocked = !hasAccess(reqTier);
               return (
-                <div
+                <a
                   key={item.id}
-                  onClick={() => executeItem(item)}
+                  href={item.hash ? `${item.path}#${item.hash}` : item.path}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    selectResult(item);
+                  }}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`p-3 rounded-lg flex items-center justify-between gap-3 cursor-pointer transition-colors ${
-                    isSelected 
-                      ? 'bg-white/[0.08] border border-white/10' 
+                  className={`p-3 rounded-lg flex items-center justify-between gap-3 transition-colors ${
+                    isSelected
+                      ? 'bg-white/[0.08] border border-white/15'
                       : 'hover:bg-white/[0.04] border border-transparent'
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded bg-[#161B26] border border-white/10 shrink-0">
-                      {item.icon}
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="p-2 rounded bg-[#161B26] border border-white/10 shrink-0 mt-0.5">
+                      {getSectionIcon(item.doorOrSection)}
                     </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white text-xs truncate font-display">
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-display font-bold text-white text-base">
                           {item.title}
                         </span>
-                        {isLocked ? (
-                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#C89B3C]/15 text-[#E8C98B] border border-[#C89B3C]/30 shrink-0 inline-flex items-center gap-1">
-                            <Lock size={9} />
-                            Tier {reqTier}
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/10 text-[#E8C98B]">
+                          {item.doorOrSection}
+                        </span>
+                        {item.status && (
+                          <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/5 text-neutral-300 border border-white/10">
+                            {item.status}
                           </span>
-                        ) : item.badge ? (
-                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white/5 text-neutral-400 border border-white/10 shrink-0">
-                            {item.badge}
-                          </span>
-                        ) : null}
+                        )}
                       </div>
-                      <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                        {item.subtitle}
-                      </p>
+                      <p className="text-sm text-neutral-300 line-clamp-2">{item.description}</p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="hidden md:inline text-[10px] font-mono text-neutral-500 uppercase">
-                      {item.category}
-                    </span>
-                    {isLocked ? (
-                      <Lock size={13} className={isSelected ? 'text-[#C89B3C]' : 'text-neutral-500'} />
-                    ) : (
-                      <ArrowRight size={13} className={`transition-transform ${isSelected ? 'text-[#C89B3C] translate-x-0.5' : 'text-neutral-600'}`} />
-                    )}
-                  </div>
-                </div>
+                  <ArrowRight size={16} className="text-[#E8C98B] shrink-0" />
+                </a>
               );
             })
           )}
         </div>
 
-        {/* Footer Navigation Hints */}
-        <div className="px-4 py-2.5 bg-[#0A0D12] border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-neutral-500">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px]">↑↓</kbd>
-              <span>Navigate</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-white/5 border border-white/10 rounded text-[9px]">ENTER</kbd>
-              <span>Select</span>
-            </span>
-          </div>
-          <span>{filteredItems.length} indexed items</span>
+        {/* Footer Hints */}
+        <div className="px-4 py-2.5 bg-[#0A0D12] border-t border-white/10 flex items-center justify-between text-xs font-mono text-neutral-400">
+          <span>Use ↑↓ and Enter to navigate · Esc to close</span>
+          <span>{filteredItems.length} pages &amp; programs</span>
         </div>
       </div>
     </div>
